@@ -49,8 +49,12 @@ async function init() {
 function updateView(index) {
     currentSlideIndex = index;
     
+    // Extract filename from path
+    const path = slides[index];
+    const filename = path.split('/').pop();
+
     // Update controls
-    slideInfo.textContent = `Slide ${index + 1} / ${slides.length}`;
+    slideInfo.textContent = `Slide ${index + 1} / ${slides.length} — ${filename}`;
     prevBtn.disabled = index === 0;
     nextBtn.disabled = index === slides.length - 1;
 
