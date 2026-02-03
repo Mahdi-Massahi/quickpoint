@@ -1,0 +1,134 @@
+:root {
+    --bg-color: #1a1a1a;
+    --text-color: #f0f0f0;
+    --accent-color: #4CAF50;
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#slide-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    transform: scale(0.95);
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+    z-index: 10;
+}
+
+.slide h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+}
+
+.slide h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.slide p, .slide li {
+    font-size: 1.5rem;
+    line-height: 1.6;
+}
+
+.slide ul {
+    list-style-position: inside;
+    text-align: left;
+}
+
+.slide pre {
+    background: #333;
+    padding: 1rem;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    max-width: 80%;
+    overflow-x: auto;
+    text-align: left;
+}
+
+#controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#controls:hover {
+    opacity: 1;
+}
+
+#controls button {
+    background: transparent;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+#controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#slide-number {
+    font-size: 1rem;
+    margin: 0 10px;
+}
+
+.notes {
+    display: none;
+}

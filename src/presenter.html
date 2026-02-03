@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presenter View - QuickPoint</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: sans-serif;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #current-slide-view {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+            background: #000;
+            border: 2px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #current-slide-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white; /* Or match slide bg */
+        }
+
+        #sidebar {
+            grid-column: 2;
+            grid-row: 1 / span 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #timer-container {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        #next-slide-preview {
+            flex: 1;
+            background: #333;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #next-slide-preview h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        #next-iframe {
+            flex: 1;
+            width: 100%;
+            border: 1px solid #555;
+            background: #fff;
+        }
+
+        #notes-container {
+            flex: 1;
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        #notes-container h3 {
+            margin-top: 0;
+            color: #888;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        #controls {
+            grid-column: 1;
+            grid-row: 3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        #slide-info {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="current-slide-view">
+        <iframe id="current-slide-iframe" src="index.html"></iframe>
+    </div>
+
+    <div id="sidebar">
+        <div id="timer-container">
+            <span id="timer">00:00:00</span>
+        </div>
+        
+        <div id="next-slide-preview">
+            <h3>Next Slide</h3>
+            <iframe id="next-iframe" src="index.html"></iframe>
+        </div>
+
+        <div id="notes-container">
+            <h3>Speaker Notes</h3>
+            <div id="notes-content">
+                No notes for this slide.
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="prev-btn">Previous</button>
+        <span id="slide-info">Slide 1 / --</span>
+        <button id="next-btn">Next</button>
+    </div>
+
+    <script type="module" src="js/presenter.js"></script>
+</body>
+</html>
