@@ -22,6 +22,7 @@ const nextIframeElement = document.getElementById('next-iframe');
 const progressBar = document.getElementById('progress-bar');
 const currentSlideView = document.getElementById('current-slide-view');
 const currentIframeContainer = document.getElementById('current-iframe-container');
+const nextPreviewTitle = document.getElementById('next-preview-title');
 
 // Initialize
 async function init() {
@@ -85,7 +86,7 @@ function resizeCurrentPreview() {
     currentIframeContainer.style.transform = `scale(${scale})`;
 }
 
-function updateView(index) {
+function updateView(index, step = -1) {
     currentSlideIndex = index;
     
     // Extract filename from path
@@ -97,20 +98,43 @@ function updateView(index) {
     prevBtn.disabled = index === 0;
     nextBtn.disabled = index === slides.length - 1;
 
-    // Update iframes
-    // We use contentWindow.location.replace to avoid adding to history stack
+    // Update Current Slide Iframe
     if (currentIframe.contentWindow) {
-        currentIframe.contentWindow.location.replace(`index.html?receiver=false#slide-${index + 1}`);
+        let hash = `index.html?receiver=false#slide-${index + 1}`;
+        if (step > -1) hash += `-step-${step + 1}`;
+        currentIframe.contentWindow.location.replace(hash);
     }
     
-    if (nextIframe.contentWindow) {
-        const nextIndex = Math.min(index + 1, slides.length - 1);
-        nextIframe.contentWindow.location.replace(`index.html?receiver=false#slide-${nextIndex + 1}`);
-    }
+    // Determine Next Preview State
+    // We need to fetch the current slide to check for steps
+    fetchSlideData(index).then(data => {
+        const { notes, stepCount } = data;
+        
+        // Update Notes
+        if (notes) {
+            notesContent.innerHTML = notes;
+        } else {
+            notesContent.innerHTML = '<em>No notes for this slide.</em>';
+        }
 
-    // Update Notes
-    fetchNotes(index);
-    
+        // Calculate Next View URL & Title
+        let nextHash;
+        if (step < stepCount - 1) {
+            // Next is a step in current slide
+            nextHash = `index.html?receiver=false#slide-${index + 1}-step-${step + 2}`;
+            if (nextPreviewTitle) nextPreviewTitle.textContent = "Next Animation";
+        } else {
+            // Next is next slide
+            const nextIndex = Math.min(index + 1, slides.length - 1);
+            nextHash = `index.html?receiver=false#slide-${nextIndex + 1}`;
+            if (nextPreviewTitle) nextPreviewTitle.textContent = "Next Slide";
+        }
+
+        if (nextIframe.contentWindow) {
+            nextIframe.contentWindow.location.replace(nextHash);
+        }
+    });
+
     // Update Progress Bar
     const progress = ((index + 1) / slides.length) * 100;
     if (progressBar) {
@@ -118,30 +142,35 @@ function updateView(index) {
     }
 }
 
-async function fetchNotes(index) {
-    if (index < 0 || index >= slides.length) return;
+async function fetchSlideData(index) {
+    if (index < 0 || index >= slides.length) return { notes: null, stepCount: 0 };
     
     try {
         const response = await fetch(slides[index]);
         const html = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        const notes = doc.querySelector('.notes');
         
-        if (notes) {
-            notesContent.innerHTML = notes.innerHTML;
-        } else {
-            notesContent.innerHTML = '<em>No notes for this slide.</em>';
-        }
+        // Get Notes
+        const notesEl = doc.querySelector('.notes');
+        const notes = notesEl ? notesEl.innerHTML : null;
+
+        // Get Steps count (unique steps)
+        const steps = Array.from(doc.querySelectorAll('[data-step]'));
+        const stepValues = new Set(steps.map(el => parseInt(el.dataset.step)));
+        const stepCount = stepValues.size;
+
+        return { notes, stepCount };
     } catch (e) {
-        notesContent.innerHTML = '<em>Error loading notes.</em>';
+        console.error("Error fetching slide data", e);
+        return { notes: '<em>Error loading notes.</em>', stepCount: 0 };
     }
 }
 
 function setupEventListeners() {
     broadcastChannel.onmessage = (event) => {
         if (event.data.type === 'SLIDE_CHANGED') {
-            updateView(event.data.index);
+            updateView(event.data.index, event.data.step);
         }
     };
 

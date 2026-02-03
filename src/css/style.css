@@ -137,3 +137,15 @@ body, html {
 .notes {
     display: none;
 }
+
+/* Step Animations */
+[data-step] {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    transform: translateY(20px); /* Optional: subtle slide up */
+}
+
+[data-step].step-visible {
+    opacity: 1;
+    transform: translateY(0);
+}

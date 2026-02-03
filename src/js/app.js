@@ -1,6 +1,8 @@
 // State management
 let currentSlideIndex = 0;
 let slides = [];
+let currentStepIndex = -1;
+let currentSlideStepValues = [];
 const broadcastChannel = new BroadcastChannel('quickpoint_channel');
 
 // DOM Elements
@@ -74,14 +76,39 @@ function renderSlide() {
         }
     });
 
+    // Initialize Steps for the new slide
+    const activeSlide = slides[currentSlideIndex];
+    if (activeSlide) {
+        const steps = Array.from(activeSlide.querySelectorAll('[data-step]'));
+        const stepValues = new Set(steps.map(el => parseInt(el.dataset.step)));
+        currentSlideStepValues = Array.from(stepValues).sort((a, b) => a - b);
+        currentStepIndex = -1;
+        
+        // Ensure all steps are hidden initially
+        steps.forEach(el => el.classList.remove('step-visible'));
+    } else {
+        currentSlideStepValues = [];
+        currentStepIndex = -1;
+    }
+
     // Update controls
     slideNumber.textContent = `${currentSlideIndex + 1} / ${slides.length}`;
     prevBtn.disabled = currentSlideIndex === 0;
     nextBtn.disabled = currentSlideIndex === slides.length - 1;
 
-    // Update URL hash without scrolling
-    const newHash = `#slide-${currentSlideIndex + 1}`;
+    // Update URL hash without scrolling (include step if > -1)
+    let newHash = `#slide-${currentSlideIndex + 1}`;
+    if (currentStepIndex > -1) {
+        newHash += `-step-${currentStepIndex + 1}`;
+    }
+    
     if (window.location.hash !== newHash) {
+        // use replaceState to avoid history spam? Or pushState?
+        // If we want back button to work for steps, use pushState or just assignment.
+        // But user might not want 100 history entries. 
+        // Presentation usually doesn't rely on back button.
+        // Let's use replaceState for steps, maybe?
+        // existing code used replaceState.
         history.replaceState(null, null, newHash);
     }
 
@@ -90,12 +117,35 @@ function renderSlide() {
     if (urlParams.get('receiver') !== 'false') {
         broadcastChannel.postMessage({
             type: 'SLIDE_CHANGED',
-            index: currentSlideIndex
+            index: currentSlideIndex,
+            step: currentStepIndex
         });
     }
 }
 
 function nextSlide() {
+    // Check for steps
+    if (currentSlideStepValues.length > 0 && currentStepIndex < currentSlideStepValues.length - 1) {
+        currentStepIndex++;
+        const stepValue = currentSlideStepValues[currentStepIndex];
+        const activeSlide = slides[currentSlideIndex];
+        const elementsToReveal = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
+        elementsToReveal.forEach(el => el.classList.add('step-visible'));
+        
+        // Update hash/broadcast
+        const newHash = `#slide-${currentSlideIndex + 1}-step-${currentStepIndex + 1}`;
+        history.replaceState(null, null, newHash);
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('receiver') !== 'false') {
+            broadcastChannel.postMessage({
+                type: 'SLIDE_CHANGED',
+                index: currentSlideIndex,
+                step: currentStepIndex
+            });
+        }
+        return;
+    }
+
     if (currentSlideIndex < slides.length - 1) {
         currentSlideIndex++;
         renderSlide();
@@ -103,6 +153,29 @@ function nextSlide() {
 }
 
 function prevSlide() {
+    // Check for visible steps to hide
+    if (currentSlideStepValues.length > 0 && currentStepIndex >= 0) {
+        const stepValue = currentSlideStepValues[currentStepIndex];
+        const activeSlide = slides[currentSlideIndex];
+        const elementsToHide = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
+        elementsToHide.forEach(el => el.classList.remove('step-visible'));
+        currentStepIndex--;
+        
+        // Update hash/broadcast
+        let newHash = `#slide-${currentSlideIndex + 1}`;
+        if (currentStepIndex > -1) newHash += `-step-${currentStepIndex + 1}`;
+        history.replaceState(null, null, newHash);
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('receiver') !== 'false') {
+            broadcastChannel.postMessage({
+                type: 'SLIDE_CHANGED',
+                index: currentSlideIndex,
+                step: currentStepIndex
+            });
+        }
+        return;
+    }
+
     if (currentSlideIndex > 0) {
         currentSlideIndex--;
         renderSlide();
@@ -112,12 +185,25 @@ function prevSlide() {
 function setupEventListeners() {
     // Hash change event
     window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.replace('#slide-', '');
-        if (hash && !isNaN(hash)) {
-            const newIndex = Math.max(0, Math.min(parseInt(hash) - 1, slides.length - 1));
-            if (newIndex !== currentSlideIndex) {
-                currentSlideIndex = newIndex;
-                renderSlide();
+        // Parse Hash: #slide-N-step-K
+        const hashStr = window.location.hash;
+        const slidePart = hashStr.match(/slide-(\d+)/);
+        const stepPart = hashStr.match(/step-(\d+)/);
+        
+        if (slidePart) {
+            const newSlideIndex = Math.max(0, Math.min(parseInt(slidePart[1]) - 1, slides.length - 1));
+            const newStepIndex = stepPart ? parseInt(stepPart[1]) - 1 : -1;
+            
+            if (newSlideIndex !== currentSlideIndex) {
+                currentSlideIndex = newSlideIndex;
+                renderSlide(); // This resets steps
+                // Apply steps if needed
+                if (newStepIndex > -1) {
+                    applySteps(newStepIndex);
+                }
+            } else if (newStepIndex !== currentStepIndex) {
+                // Same slide, different step
+                applySteps(newStepIndex);
             }
         }
     });
@@ -205,6 +291,22 @@ function toggleFullscreen() {
             document.exitFullscreen();
         }
     }
+}
+
+function applySteps(targetStepIndex) {
+    currentStepIndex = targetStepIndex;
+    
+    // Iterate through all possible step values for this slide
+    currentSlideStepValues.forEach((stepValue, index) => {
+        const activeSlide = slides[currentSlideIndex];
+        const elements = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
+        
+        if (index <= targetStepIndex) {
+            elements.forEach(el => el.classList.add('step-visible'));
+        } else {
+            elements.forEach(el => el.classList.remove('step-visible'));
+        }
+    });
 }
 
 function resizeApp() {
