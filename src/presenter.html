@@ -52,6 +52,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            overflow: hidden; /* Ensure progress bar stays inside border radius */
         }
 
         #timer-section {
@@ -97,6 +99,16 @@
         #date {
             font-size: 0.8rem;
             color: #aaa;
+        }
+
+        #progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background-color: var(--accent-color, #4CAF50);
+            width: 0%;
+            transition: width 0.3s ease;
         }
 
         #next-slide-preview {
@@ -203,6 +215,7 @@
                 <div id="clock">--:--</div>
                 <div id="date">-- -- ----</div>
             </div>
+            <div id="progress-bar"></div>
         </div>
         
         <div id="next-slide-preview">

@@ -19,6 +19,7 @@ const clockDisplay = document.getElementById('clock');
 const dateDisplay = document.getElementById('date');
 const nextIframeContainer = document.getElementById('next-iframe-container');
 const nextIframeElement = document.getElementById('next-iframe');
+const progressBar = document.getElementById('progress-bar');
 
 // Initialize
 async function init() {
@@ -88,6 +89,12 @@ function updateView(index) {
 
     // Update Notes
     fetchNotes(index);
+    
+    // Update Progress Bar
+    const progress = ((index + 1) / slides.length) * 100;
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+    }
 }
 
 async function fetchNotes(index) {
