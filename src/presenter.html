@@ -45,13 +45,58 @@
             gap: 20px;
         }
 
-        #timer-container {
+        #time-panel {
             background: #333;
             padding: 15px;
             border-radius: 8px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #timer-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #timer {
             font-size: 2rem;
             font-weight: bold;
+        }
+
+        #timer-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        #timer-controls button {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            background: #555;
+            border-radius: 4px;
+        }
+
+        #timer-controls button:hover {
+            background: #666;
+        }
+
+        #clock-section {
+            text-align: right;
+            border-left: 1px solid #555;
+            padding-left: 15px;
+        }
+
+        #clock {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        #date {
+            font-size: 0.8rem;
+            color: #aaa;
         }
 
         #next-slide-preview {
@@ -128,8 +173,19 @@
     </div>
 
     <div id="sidebar">
-        <div id="timer-container">
-            <span id="timer">00:00:00</span>
+        <div id="time-panel">
+            <div id="timer-section">
+                <div id="timer">00:00:00</div>
+                <div id="timer-controls">
+                    <button id="pause-timer-btn">Pause</button>
+                    <button id="reset-timer-btn">Reset</button>
+                </div>
+            </div>
+            
+            <div id="clock-section">
+                <div id="clock">--:--</div>
+                <div id="date">-- -- ----</div>
+            </div>
         </div>
         
         <div id="next-slide-preview">

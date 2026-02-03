@@ -3,6 +3,7 @@ let slides = [];
 let currentSlideIndex = 0;
 let timerInterval;
 let seconds = 0;
+let isTimerRunning = true;
 
 // DOM Elements
 const currentIframe = document.getElementById('current-slide-iframe');
@@ -12,6 +13,10 @@ const timerDisplay = document.getElementById('timer');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const slideInfo = document.getElementById('slide-info');
+const pauseTimerBtn = document.getElementById('pause-timer-btn');
+const resetTimerBtn = document.getElementById('reset-timer-btn');
+const clockDisplay = document.getElementById('clock');
+const dateDisplay = document.getElementById('date');
 
 // Initialize
 async function init() {
@@ -115,15 +120,43 @@ function setupEventListeners() {
              if (currentSlideIndex > 0) broadcastChannel.postMessage({ type: 'CMD_PREV' });
         }
     });
+
+    // Timer controls
+    pauseTimerBtn.addEventListener('click', toggleTimer);
+    resetTimerBtn.addEventListener('click', resetTimer);
+}
+
+function toggleTimer() {
+    isTimerRunning = !isTimerRunning;
+    pauseTimerBtn.textContent = isTimerRunning ? 'Pause' : 'Resume';
+}
+
+function resetTimer() {
+    seconds = 0;
+    updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    timerDisplay.textContent = `${h}:${m}:${s}`;
+}
+
+function updateClock() {
+    const now = new Date();
+    clockDisplay.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    dateDisplay.textContent = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function startTimer() {
+    updateClock();
     timerInterval = setInterval(() => {
-        seconds++;
-        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        timerDisplay.textContent = `${h}:${m}:${s}`;
+        updateClock();
+        if (isTimerRunning) {
+            seconds++;
+            updateTimerDisplay();
+        }
     }, 1000);
 }
 
