@@ -9,6 +9,7 @@ const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const slideNumber = document.getElementById('slide-number');
 const presenterBtn = document.getElementById('presenter-mode-btn');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
 
 // Initialization
 async function init() {
@@ -132,6 +133,7 @@ function setupEventListeners() {
     nextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextSlide(); });
     prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
     presenterBtn.addEventListener('click', (e) => { e.stopPropagation(); openPresenterMode(); });
+    fullscreenBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
 
     // Keyboard events
     document.addEventListener('keydown', (e) => {
@@ -139,6 +141,8 @@ function setupEventListeners() {
             nextSlide();
         } else if (e.key === 'ArrowLeft') {
             prevSlide();
+        } else if (e.key.toLowerCase() === 'f') {
+            toggleFullscreen();
         }
     });
 
@@ -189,6 +193,18 @@ function openPresenterMode() {
         'Presenter View', 
         `width=${width},height=${height},top=${top},left=${left}`
     );
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
 }
 
 function resizeApp() {
