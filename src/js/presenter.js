@@ -17,6 +17,8 @@ const pauseTimerBtn = document.getElementById('pause-timer-btn');
 const resetTimerBtn = document.getElementById('reset-timer-btn');
 const clockDisplay = document.getElementById('clock');
 const dateDisplay = document.getElementById('date');
+const nextIframeContainer = document.getElementById('next-iframe-container');
+const nextIframeElement = document.getElementById('next-iframe');
 
 // Initialize
 async function init() {
@@ -34,6 +36,8 @@ async function init() {
         
         setupEventListeners();
         startTimer();
+        resizePreview();
+        window.addEventListener('resize', resizePreview);
 
         // Request current state from main window
         broadcastChannel.postMessage({ type: 'REQUEST_STATE' });
@@ -44,6 +48,19 @@ async function init() {
     } catch (e) {
         console.error("Error initializing presenter view", e);
     }
+}
+
+function resizePreview() {
+    if (!nextIframeContainer || !nextIframeElement) return;
+    
+    // Get the available width from the container itself
+    const containerWidth = nextIframeContainer.clientWidth;
+    
+    // Base dimensions as defined in CSS
+    const baseWidth = 1280;
+    
+    const scale = containerWidth / baseWidth;
+    nextIframeElement.style.transform = `scale(${scale})`;
 }
 
 function updateView(index) {

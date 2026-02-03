@@ -100,12 +100,15 @@
         }
 
         #next-slide-preview {
-            flex: 1;
+            /* flex: 1; Removed to let height adjust to content */
             background: #333;
             border-radius: 8px;
             padding: 10px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0; /* Don't shrink below content */
         }
 
         #next-slide-preview h3 {
@@ -113,13 +116,27 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             color: #888;
+            z-index: 10;
+            position: relative;
+        }
+
+        #next-iframe-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
         }
 
         #next-iframe {
-            flex: 1;
-            width: 100%;
-            border: 1px solid #555;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1280px;
+            height: 720px;
+            border: none;
             background: #fff;
+            transform-origin: 0 0;
         }
 
         #notes-container {
@@ -190,7 +207,9 @@
         
         <div id="next-slide-preview">
             <h3>Next Slide</h3>
-            <iframe id="next-iframe" src="index.html"></iframe>
+            <div id="next-iframe-container">
+                <iframe id="next-iframe" src="index.html"></iframe>
+            </div>
         </div>
 
         <div id="notes-container">
