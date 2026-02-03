@@ -20,11 +20,13 @@ const dateDisplay = document.getElementById('date');
 const nextIframeContainer = document.getElementById('next-iframe-container');
 const nextIframeElement = document.getElementById('next-iframe');
 const progressBar = document.getElementById('progress-bar');
+const currentSlideView = document.getElementById('current-slide-view');
+const currentIframeContainer = document.getElementById('current-iframe-container');
 
 // Initialize
 async function init() {
     try {
-        const response = await fetch('../examples/config.json');
+        const response = await fetch('../examples/slides/config.json');
         const config = await response.json();
         slides = config.slides;
 
@@ -38,7 +40,11 @@ async function init() {
         setupEventListeners();
         startTimer();
         resizePreview();
-        window.addEventListener('resize', resizePreview);
+        resizeCurrentPreview();
+        window.addEventListener('resize', () => {
+            resizePreview();
+            resizeCurrentPreview();
+        });
 
         // Request current state from main window
         broadcastChannel.postMessage({ type: 'REQUEST_STATE' });
@@ -62,6 +68,21 @@ function resizePreview() {
     
     const scale = containerWidth / baseWidth;
     nextIframeElement.style.transform = `scale(${scale})`;
+}
+
+function resizeCurrentPreview() {
+    if (!currentSlideView || !currentIframeContainer) return;
+    
+    // Available space
+    const viewWidth = currentSlideView.clientWidth - 20; // Padding
+    const viewHeight = currentSlideView.clientHeight - 20;
+    
+    // Scale to fit 1280x720
+    const scaleX = viewWidth / 1280;
+    const scaleY = viewHeight / 720;
+    const scale = Math.min(scaleX, scaleY);
+    
+    currentIframeContainer.style.transform = `scale(${scale})`;
 }
 
 function updateView(index) {

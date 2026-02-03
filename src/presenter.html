@@ -28,13 +28,25 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            overflow: hidden;
+        }
+
+        #current-iframe-container {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            background: #fff;
+            transform-origin: center center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
         #current-slide-iframe {
             width: 100%;
             height: 100%;
             border: none;
-            background: white; /* Or match slide bg */
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         #sidebar {
@@ -198,7 +210,9 @@
 </head>
 <body>
     <div id="current-slide-view">
-        <iframe id="current-slide-iframe" src="index.html"></iframe>
+        <div id="current-iframe-container">
+            <iframe id="current-slide-iframe" src="index.html"></iframe>
+        </div>
     </div>
 
     <div id="sidebar">

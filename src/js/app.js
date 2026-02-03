@@ -13,7 +13,10 @@ const presenterBtn = document.getElementById('presenter-mode-btn');
 // Initialization
 async function init() {
     try {
-        const response = await fetch('../examples/config.json');
+        resizeApp();
+        window.addEventListener('resize', resizeApp);
+
+        const response = await fetch('../examples/slides/config.json');
         if (!response.ok) throw new Error('Failed to load config.json');
         
         const config = await response.json();
@@ -119,9 +122,16 @@ function setupEventListeners() {
     });
 
     // Click events
-    nextBtn.addEventListener('click', nextSlide);
-    prevBtn.addEventListener('click', prevSlide);
-    presenterBtn.addEventListener('click', openPresenterMode);
+    // Click anywhere on slide to advance (unless strictly clicking controls)
+    slideContainer.addEventListener('click', (e) => {
+        // Prevent if clicking on links or interactive elements
+        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+        nextSlide();
+    });
+
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextSlide(); });
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
+    presenterBtn.addEventListener('click', (e) => { e.stopPropagation(); openPresenterMode(); });
 
     // Keyboard events
     document.addEventListener('keydown', (e) => {
@@ -179,6 +189,35 @@ function openPresenterMode() {
         'Presenter View', 
         `width=${width},height=${height},top=${top},left=${left}`
     );
+}
+
+function resizeApp() {
+    const app = document.getElementById('app');
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Base resolution (16:9)
+    const baseWidth = 1280;
+    const baseHeight = 720;
+    
+    const scaleX = windowWidth / baseWidth;
+    const scaleY = windowHeight / baseHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    app.style.width = `${baseWidth}px`;
+    app.style.height = `${baseHeight}px`;
+    app.style.transform = `scale(${scale})`;
+    app.style.transformOrigin = 'center center';
+    
+    // Center it
+    app.style.position = 'absolute';
+    app.style.top = '50%';
+    app.style.left = '50%';
+    app.style.marginTop = `-${baseHeight/2}px`;
+    app.style.marginLeft = `-${baseWidth/2}px`;
+    
+    // Ensure overflow hidden on body to avoid scrollbars
+    document.body.style.overflow = 'hidden';
 }
 
 // Start the app
