@@ -1,6 +1,7 @@
 // State management
 let currentSlideIndex = 0;
 let slides = [];
+let slideFiles = [];
 let currentStepIndex = -1;
 let currentSlideStepValues = [];
 const broadcastChannel = new BroadcastChannel('quickpoint_channel');
@@ -10,6 +11,7 @@ const slideContainer = document.getElementById('slide-container');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const slideNumber = document.getElementById('slide-number');
+const slideFilename = document.getElementById('slide-filename');
 const presenterBtn = document.getElementById('presenter-mode-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
 
@@ -19,22 +21,35 @@ async function init() {
         resizeApp();
         window.addEventListener('resize', resizeApp);
 
-        const response = await fetch('../examples/slides/config.json');
+        const response = await fetch('../examples/HybridIntelligence/slides/config.json');
         if (!response.ok) throw new Error('Failed to load config.json');
         
         const config = await response.json();
-        const slideFiles = config.slides;
+        slideFiles = config.slides;
 
         // Load all slides
         await loadSlides(slideFiles);
         
         // Check URL hash for initial slide
-        const hash = window.location.hash.replace('#slide-', '');
-        if (hash && !isNaN(hash)) {
-            currentSlideIndex = Math.max(0, Math.min(parseInt(hash) - 1, slides.length - 1));
+        const hashStr = window.location.hash;
+        const slidePart = hashStr.match(/slide-(\d+)/);
+        const stepPart = hashStr.match(/step-(\d+)/);
+        let initialStepIndex = -1;
+
+        if (slidePart) {
+            currentSlideIndex = Math.max(0, Math.min(parseInt(slidePart[1]) - 1, slides.length - 1));
+            if (stepPart) {
+                initialStepIndex = parseInt(stepPart[1]) - 1;
+            }
         }
 
         renderSlide();
+        
+        // Apply initial step if present
+        if (initialStepIndex > -1) {
+            applySteps(initialStepIndex);
+        }
+
         setupEventListeners();
         setupBroadcastListener();
     } catch (error) {
@@ -93,6 +108,15 @@ function renderSlide() {
 
     // Update controls
     slideNumber.textContent = `${currentSlideIndex + 1} / ${slides.length}`;
+    
+    // Show filename
+    if (slideFiles[currentSlideIndex]) {
+        const filename = slideFiles[currentSlideIndex].split('/').pop();
+        slideFilename.textContent = `(${filename})`;
+    } else {
+        slideFilename.textContent = '';
+    }
+
     prevBtn.disabled = currentSlideIndex === 0;
     nextBtn.disabled = currentSlideIndex === slides.length - 1;
 

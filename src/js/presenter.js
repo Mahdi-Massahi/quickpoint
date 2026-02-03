@@ -27,7 +27,7 @@ const nextPreviewTitle = document.getElementById('next-preview-title');
 // Initialize
 async function init() {
     try {
-        const response = await fetch('../examples/slides/config.json');
+        const response = await fetch('../examples/HybridIntelligence/slides/config.json');
         const config = await response.json();
         slides = config.slides;
 

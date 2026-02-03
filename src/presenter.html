@@ -6,8 +6,8 @@
     <title>Presenter View - QuickPoint</title>
     <style>
         body {
-            background-color: #222;
-            color: #fff;
+            background-color: #f0f0f2;
+            color: #2d2d2d;
             font-family: sans-serif;
             margin: 0;
             display: grid;
@@ -22,13 +22,14 @@
         #current-slide-view {
             grid-column: 1;
             grid-row: 1 / span 2;
-            background: #000;
-            border: 2px solid #444;
+            background: #d1d1d6;
+            border: 1px solid #c7c7cc;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
+            border-radius: 8px;
         }
 
         #current-iframe-container {
@@ -58,7 +59,8 @@
         }
 
         #time-panel {
-            background: #333;
+            background: #fff;
+            border: 1px solid #ddd;
             padding: 15px;
             border-radius: 8px;
             display: flex;
@@ -88,24 +90,26 @@
         #timer-controls button {
             font-size: 0.7rem;
             padding: 4px 8px;
-            background: #555;
+            background: #f5f5f7;
+            color: #2d2d2d;
+            border: 1px solid #ddd;
             border-radius: 4px;
         }
 
         #timer-controls button:hover {
-            background: #666;
+            background: #ebebed;
         }
 
         #clock-section {
             text-align: right;
-            border-left: 1px solid #555;
+            border-left: 1px solid #eee;
             padding-left: 15px;
         }
 
         #clock {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #fff;
+            color: #2d2d2d;
         }
 
         #date {
@@ -125,7 +129,8 @@
 
         #next-slide-preview {
             /* flex: 1; Removed to let height adjust to content */
-            background: #333;
+            background: #fff;
+            border: 1px solid #ddd;
             border-radius: 8px;
             padding: 10px;
             display: flex;
@@ -165,7 +170,8 @@
 
         #notes-container {
             flex: 1;
-            background: #333;
+            background: #fff;
+            border: 1px solid #ddd;
             padding: 15px;
             border-radius: 8px;
             overflow-y: auto;
@@ -184,7 +190,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #333;
+            background: #fff;
+            border: 1px solid #ddd;
             padding: 10px;
             border-radius: 8px;
         }
@@ -193,14 +200,14 @@
             padding: 10px 20px;
             font-size: 1.2rem;
             cursor: pointer;
-            background: #444;
-            color: white;
-            border: none;
+            background: #f5f5f7;
+            color: #2d2d2d;
+            border: 1px solid #ddd;
             border-radius: 4px;
         }
 
         button:hover {
-            background: #555;
+            background: #ebebed;
         }
 
         #slide-info {

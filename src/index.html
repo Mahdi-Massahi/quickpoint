@@ -12,11 +12,14 @@
             <!-- Slides will be injected here -->
         </div>
         <div id="controls">
-            <button id="prev-btn" title="Previous Slide">←</button>
-            <span id="slide-number"></span>
-            <button id="next-btn" title="Next Slide">→</button>
-            <button id="fullscreen-btn" title="Toggle Full Screen">⛶</button>
-            <button id="presenter-mode-btn" title="Open Presenter View">P</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="prev-btn" title="Previous Slide">←</button>
+                <span id="slide-number"></span>
+                <button id="next-btn" title="Next Slide">→</button>
+                <button id="fullscreen-btn" title="Toggle Full Screen">⛶</button>
+                <button id="presenter-mode-btn" title="Open Presenter View">P</button>
+            </div>
+            <div id="slide-filename" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 2px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
         </div>
     </div>
 
