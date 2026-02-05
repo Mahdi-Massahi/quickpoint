@@ -1,0 +1,42 @@
+<div style="width: 100%;">
+    <h1>Diagnosing Response</h1>
+    <h2>
+        Diagnose Response > Initial Attempt
+    </h2>
+
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Chat View -->
+        <div data-step="1" style="padding: 1rem; background: #f1f3f4; border-radius: 12px; border: 1px solid #ddd; position: relative;">
+            <p style="margin: 0; font-size: 1.5rem; color: #666; font-weight: bold; margin-bottom: 0.5rem;">Lingua:</p>
+            <p style="margin: 0; font-size: 1.5rem; line-height: 1.4;">
+                Hoi Mahdi! Today we will learn <strong>fietsen</strong> (cycling) and <strong>wandelen</strong> (walking). 
+                Het is <strong>lekker</strong> weer!
+            </p>
+            
+            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                <span style="font-size: 1.2rem; background: #e8f0fe; color: #1967d2; padding: 0.3rem 0.5rem; border-radius: 4px; border: 1px solid #d2e3fc;">🛠️ save_vocab("fietsen")</span>
+                <span style="font-size: 1.2rem; background: #e8f0fe; color: #1967d2; padding: 0.3rem 0.5rem; border-radius: 4px; border: 1px solid #d2e3fc;">🛠️ pronounce("lekker")</span>
+            </div>
+        </div>
+
+        <!-- Problem -->
+        <div data-step="2" style="padding: 1rem; background: #fff5f5; border: 2px solid #feb2b2; border-radius: 8px;">
+            <ul style="margin: 0.5rem 0 0 0; font-size: 1.1rem; color: #c53030;">
+                <li>Missing <code>save_vocab</code> for "wandelen" and "lekker".</li>
+                <li>Missing <code>pronounce</code> for the phrases.</li>
+                <li>Inconsistent Tool Calling.</li>
+            </ul>
+        </div>
+
+        <div data-step="3" style="text-align: center; color: #666; font-style: italic; font-size: 1.1rem;">
+            "Wait, maybe I should just tell it to be better?"
+        </div>
+    </div>
+</div>
+
+<div class="notes">
+    <p>[[Slide Notes#From "Issue" to "Hybrid Intelligence" > Diagnose Response]]</p>
+    <p>Initial results: The LLM is helpful, but unreliable as an algorithm.</p>
+    <p>It uses tools, but not for every word as we wanted. It misses "wandelen" and doesn't pronounce everything.</p>
+    <p>This is the classic LLM problem: Stochastic behavior in a deterministic requirement.</p>
+</div>

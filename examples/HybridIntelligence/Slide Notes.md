@@ -128,7 +128,7 @@ Hybrid Intelligence > Intelligence > Problem > Algorithms > Complexity Orders
 ~~**Space Complexity:** How much extra "scratchpad" memory does the algorithm need to store data while it works?~~
 
 ---
-# Complexity Classes (for problems)
+# Complexity Classes  (for problems)
 Hybrid Intelligence > Intelligence > Problem > Complexity Classes
 
 We can classify the problems based on the most efficient algorithms we have to solve and verify them.

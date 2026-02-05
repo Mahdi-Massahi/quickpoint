@@ -1,0 +1,35 @@
+<div style="width: 100%;">
+    <h1>The Hammer Attempt</h1>
+    <h2>
+        Diagnose Response > The "Hammer" Approach
+    </h2>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+        <div data-step="1" style="font-size: 4rem; margin-bottom: 1rem;">🔨</div>
+        
+        <div data-step="1" style="width: 100%;">
+            <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 1.1rem; color: #dc3545;">Aggressive Prompting:</p>
+            <pre style="margin: 0; padding: 1rem; background: #282c34; color: #abb2bf; border-radius: 8px; font-size: 1.5rem; line-height: 1.4; border-left: 5px solid #dc3545;">
+For every Dutch vocabulary you use, 
+make sure you make a tool call to `save_vocab` 
+and `pronounce` for the last phrase as a follow up.
+YOU MUST DO THIS FOR EVERY SINGLE WORD.
+            </pre>
+        </div>
+
+        <!-- <div data-step="2" style="margin-top: 1rem; padding: 1rem; background: #fff; border: 1px solid #ddd; border-radius: 8px; width: 100%;">
+            <p style="margin: 0; font-size: 1rem; color: #666; font-weight: bold;">Result:</p>
+            <p style="margin: 0.5rem 0; font-size: 1.1rem;">More tool calls, but still missing words. <strong>Stochastic nature persists.</strong></p>
+        </div> -->
+
+        <div data-step="3" style="text-align: center; color: #dc3545; font-weight: bold; font-size: 1.8rem;">
+            We are trying to force a probabilistic engine <br> to behave deterministically...
+        </div>
+    </div>
+</div>
+
+<div class="notes">
+    <p>[[Slide Notes#From "Issue" to "Hybrid Intelligence" > Hammer]]</p>
+    <p>We try the 'Hammer' approach: aggressive prompt engineering. We explicitly command the LLM to use tools for every word.</p>
+    <p>The results improve, but it's still not 100%. Some words are still missed. The LLM's nature is probabilistic, and no amount of "YOU MUST" will change that into 100% reliability.</p>
+</div>

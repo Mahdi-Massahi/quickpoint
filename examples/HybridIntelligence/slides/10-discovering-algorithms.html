@@ -1,0 +1,58 @@
+<div style="width: 100%;">
+    <h1>Discovering New Algorithms</h1>
+    <h2>
+        Hybrid Intelligence > Intelligence > Problem > Algorithms
+    </h2>
+
+    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+        <p style="font-size: 1.5rem; text-align: center; margin-bottom: 0.5rem;">Our knowledge of a problem's class can change!</p>
+
+        <!-- Header Row -->
+        <div data-step="1" style="display: flex; padding: 0 1rem; font-weight: bold; color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; margin-bottom: 0.2rem;">
+            <div style="flex: 2;">Problem</div>
+            <div style="flex: 1; text-align: center;">Solving</div>
+            <div style="width: 120px; text-align: right;">Class</div>
+        </div>
+
+        <!-- BPP - Prior to 2002 -->
+        <div data-step="1" style="padding: 0.6rem 1rem; background: rgba(253, 126, 20, 0.05); border: 1px solid rgba(253, 126, 20, 0.2); border-radius: 8px; display: flex; align-items: center; gap: 1rem;">
+            <div style="flex: 2;">
+                <p style="margin: 0; font-size: 1.5rem; font-weight: 500; line-height: 1.2;">"Is <strong>N</strong> prime?" <span style="font-size: 3rem; vertical-align: middle; margin-left: 0.5rem; line-height: 1;">7️⃣</span></p>
+                <p style="margin: 0; font-size: 1.3rem; color: #666;">From 1970</p>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <span style="display: inline-block; padding: 0.2rem 0.6rem; border: 2px solid #fd7e14; border-radius: 6px; color: #fd7e14; font-weight: bold; font-family: 'Courier New', Courier, monospace; background: white; font-size: 1.5rem;">Probabilistic</span>
+            </div>
+            <div style="width: 120px; text-align: right; font-weight: 900; color: #fd7e14; font-size: 1.6rem;">BPP</div>
+        </div>
+
+        <p data-step="2" style="text-align: center; margin: 0.5rem 0; color: #666; font-style: italic; font-size: 1.3rem;">
+            Scientists worked very hard for decades...
+        </p>
+
+        <!-- P - After 2002 -->
+        <div data-step="3" style="padding: 0.6rem 1rem; background: rgba(40, 167, 69, 0.05); border: 1px solid rgba(40, 167, 69, 0.2); border-radius: 8px; display: flex; align-items: center; gap: 1rem;">
+            <div style="flex: 2;">
+                <p style="margin: 0; font-size: 1.5rem; font-weight: 500; line-height: 1.2;">"Is <strong>N</strong> prime?" <span style="font-size: 3rem; vertical-align: middle; margin-left: 0.5rem; line-height: 1;">7️⃣</span></p>
+                <p style="margin: 0; font-size: 1.3rem; color: #666;">After AKS (2002)</p>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <span style="display: inline-block; padding: 0.2rem 0.6rem; border: 2px solid #28a745; border-radius: 6px; color: #28a745; font-weight: bold; font-family: 'Courier New', Courier, monospace; background: white; font-size: 1.5rem;">O(log N)</span>
+            </div>
+            <div style="width: 120px; text-align: right; font-weight: 900; color: #28a745; font-size: 1.6rem;">P</div>
+        </div>
+
+        <div data-step="4" style="margin-top: 1rem; padding: 1.2rem; background: #e7f3ff; border-radius: 12px; border-left: 5px solid #007bff;">
+            <p style="margin: 0; font-size: 1.5rem; line-height: 1.5;">
+                While a problem's inherent difficulty is fixed, our <strong>classification</strong> of it improves as we discover better algorithms.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="notes">
+    <p>[[Slide Notes#Discovering more efficient algorithms]]</p>
+    <p>Let's use Primality testing as an example.</p>
+    <p>Before 2002, we primarily had probabilistic algorithms (BPP). But with the discovery of the AKS algorithm, we proved it can be solved deterministically in polynomial time (P).</p>
+    <p>Crucial mindset: These classes are not fixed in our understanding. Progress in Computer Science often means finding a "shortcut" that moves a problem from a hard class to an easier one.</p>
+</div>

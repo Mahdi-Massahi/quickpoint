@@ -1,0 +1,27 @@
+{
+    "slides": [
+        "../examples/HybridIntelligence/slides/00-cover.html",
+        "../examples/HybridIntelligence/slides/00-intro.html",
+        "../examples/HybridIntelligence/slides/00-roadmap.html",
+        "../examples/HybridIntelligence/slides/01-intelligence.html",
+        "../examples/HybridIntelligence/slides/02-problem.html",
+        "../examples/HybridIntelligence/slides/03-issue-vs-problem.html",
+        "../examples/HybridIntelligence/slides/04-problem-types.html",
+        "../examples/HybridIntelligence/slides/05-reduction.html",
+        "../examples/HybridIntelligence/slides/06-algorithms.html",
+        "../examples/HybridIntelligence/slides/07-complexity-orders.html",
+        "../examples/HybridIntelligence/slides/08-problem-classification.html",
+        "../examples/HybridIntelligence/slides/10-discovering-algorithms.html",
+        "../examples/HybridIntelligence/slides/11-discovery-of-llms.html",
+        "../examples/HybridIntelligence/slides/12-choosing-algorithms.html",
+        "../examples/HybridIntelligence/slides/13-broken-hammer.html",
+        "../examples/HybridIntelligence/slides/14-llm-translator.html",
+        "../examples/HybridIntelligence/slides/15-hybrid-intelligence.html",
+        "../examples/HybridIntelligence/slides/16-example-dutch.html",
+        "../examples/HybridIntelligence/slides/17-system-prompt.html",
+        "../examples/HybridIntelligence/slides/18-diagnose-response.html",
+        "../examples/HybridIntelligence/slides/19-hammer-attempt.html",
+        "../examples/HybridIntelligence/slides/20-hybrid-solution.html",
+        "../examples/HybridIntelligence/slides/21-summary.html"
+    ]
+}

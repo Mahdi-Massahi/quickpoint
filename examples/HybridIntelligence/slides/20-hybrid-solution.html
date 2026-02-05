@@ -1,0 +1,52 @@
+<div style="width: 100%;">
+    <h1>The Hybrid Solution</h1>
+    <h2>
+        Diagnose Response > Hybrid Intelligence
+    </h2>
+
+    <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+        <!-- Step 1: Format Prompt -->
+        <div data-step="1">
+            <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 1.5rem; color: #007bff;">1. Instruct for Format (Probabilistic):</p>
+            <div style="padding: 0.8rem; background: #e7f3ff; border: 1px solid #b8daff; border-radius: 8px; font-size: 1.5rem; font-style: italic;">
+                "Put every Dutch phrase in **bold** and follow with the translation in (round brackets)."
+            </div>
+        </div>
+
+        <!-- Step 2: Deterministic Extract -->
+        <div data-step="2">
+            <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 1.5rem; color: #28a745;">2. Extract via Regex (Deterministic):</p>
+            <pre style="margin: 0; padding: 0.8rem; background: #282c34; color: #abb2bf; border-radius: 8px; font-size: 1.5rem; font-family: monospace;">
+re.findall(r"\*\*(.*?)\*\* \((.*?)\)", response)
+            </pre>
+        </div>
+
+        <!-- Step 3: Result -->
+        <div data-step="3" style="margin-top: 0.5rem;">
+            <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 1.5rem; color: #6f42c1;">3. Sprinkle some UI magics:</p>
+            <div style="padding: 1rem; background: #fff; border: 1px solid #ddd; border-radius: 12px;">
+                <p style="margin: 0; font-size: 1.3rem; line-height: 1.6;">
+                    Hoi Mahdi! Today we will learn <span style="color: #6f42c1; background: #f3e5f5; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: bold;">fietsen 🔊</span> (cycling) and <span style="color: #6f42c1; background: #f3e5f5; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: bold;">wandelen 🔊</span> (walking). 
+                    Het is <span style="color: #6f42c1; background: #f3e5f5; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: bold;">lekker 🔊</span> (nice) weer!
+                </p>
+                
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <span style="font-size: 1.2rem; background: #e8f0fe; color: #1967d2; padding: 0.3rem 0.5rem; border-radius: 4px; border: 1px solid #d2e3fc;">🛠️ save_vocab("fietsen")</span>
+                    <span style="font-size: 1.2rem; background: #e8f0fe; color: #1967d2; padding: 0.3rem 0.5rem; border-radius: 4px; border: 1px solid #d2e3fc;">🛠️ save_vocab("wandelen")</span>
+                    <span style="font-size: 1.2rem; background: #e8f0fe; color: #1967d2; padding: 0.3rem 0.5rem; border-radius: 4px; border: 1px solid #d2e3fc;">🛠️ save_vocab("lekker")</span>
+                </div>
+            </div>
+        </div>
+
+        <div data-step="4" style="text-align: center; margin-top: 0.5rem; font-weight: bold; color: #28a745; font-size: 1.4rem;">
+            Precision, Reliability, and Determinism achieved!
+        </div>
+    </div>
+</div>
+
+<div class="notes">
+    <p>[[Slide Notes#From "Issue" to "Hybrid Intelligence" > Hybrid Intelligence]]</p>
+    <p>The Hybrid solution: We use the LLM to format the output consistently using simple markdown. This is a task LLMs are great at.</p>
+    <p>Then, we use a deterministic Regex algorithm to extract the data. We don't rely on the LLM to call tools—we offload the tool calling to our own code based on the LLM's formatted output.</p>
+    <p>This gives us 100% reliability for tool calls and a beautiful, interactive UI. This is Hybrid Intelligence.</p>
+</div>
