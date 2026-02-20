@@ -14,6 +14,9 @@ const slideNumber = document.getElementById('slide-number');
 const slideFilename = document.getElementById('slide-filename');
 const presenterBtn = document.getElementById('presenter-mode-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
+const exitBtn = document.getElementById('exit-btn');
+const landing = document.getElementById('landing');
+const app = document.getElementById('app');
 
 // Initialization
 async function init() {
@@ -21,41 +24,100 @@ async function init() {
         resizeApp();
         window.addEventListener('resize', resizeApp);
 
-        const response = await fetch('../examples/HybridIntelligence/slides/config.json');
-        if (!response.ok) throw new Error('Failed to load config.json');
-        
-        const config = await response.json();
-        slideFiles = config.slides;
+        // 1. Check ?config= query param
+        const urlParams = new URLSearchParams(window.location.search);
+        const configParam = urlParams.get('config');
 
-        // Load all slides
-        await loadSlides(slideFiles);
-        
-        // Check URL hash for initial slide
-        const hashStr = window.location.hash;
-        const slidePart = hashStr.match(/slide-(\d+)/);
-        const stepPart = hashStr.match(/step-(\d+)/);
-        let initialStepIndex = -1;
-
-        if (slidePart) {
-            currentSlideIndex = Math.max(0, Math.min(parseInt(slidePart[1]) - 1, slides.length - 1));
-            if (stepPart) {
-                initialStepIndex = parseInt(stepPart[1]) - 1;
-            }
+        if (configParam) {
+            const response = await fetch(configParam);
+            if (!response.ok) throw new Error('Failed to load config: ' + configParam);
+            const config = await response.json();
+            sessionStorage.setItem('quickpoint_slides', JSON.stringify(config.slides));
+            slideFiles = config.slides;
+        }
+        // 2. Check sessionStorage
+        else if (sessionStorage.getItem('quickpoint_slides')) {
+            slideFiles = JSON.parse(sessionStorage.getItem('quickpoint_slides'));
+        }
+        // 3. Show landing screen and wait for file input
+        else {
+            showLanding();
+            return;
         }
 
-        renderSlide();
-        
-        // Apply initial step if present
-        if (initialStepIndex > -1) {
-            applySteps(initialStepIndex);
-        }
-
-        setupEventListeners();
-        setupBroadcastListener();
+        startPresentation();
     } catch (error) {
         console.error('Initialization error:', error);
-        slideContainer.innerHTML = `<div class="slide active"><h1>Error</h1><p>${error.message}</p></div>`;
+        if (slideContainer) {
+            slideContainer.innerHTML = `<div class="slide active"><h1>Error</h1><p>${error.message}</p></div>`;
+        }
     }
+}
+
+function showLanding() {
+    if (landing) landing.style.display = 'flex';
+    if (app) app.style.display = 'none';
+
+    const fileInput = document.getElementById('config-file-input');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileInput);
+    }
+}
+
+function handleFileInput(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const config = JSON.parse(event.target.result);
+            if (!config.slides || !Array.isArray(config.slides)) {
+                throw new Error('Invalid config: missing "slides" array');
+            }
+            sessionStorage.setItem('quickpoint_slides', JSON.stringify(config.slides));
+            slideFiles = config.slides;
+
+            if (landing) landing.style.display = 'none';
+            if (app) app.style.display = '';
+
+            startPresentation();
+        } catch (err) {
+            console.error('Error reading config file:', err);
+            alert('Invalid config file: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function startPresentation() {
+    if (landing) landing.style.display = 'none';
+    if (app) app.style.display = '';
+
+    await loadSlides(slideFiles);
+
+    // Check URL hash for initial slide
+    const hashStr = window.location.hash;
+    const slidePart = hashStr.match(/slide-(\d+)/);
+    const stepPart = hashStr.match(/step-(\d+)/);
+    let initialStepIndex = -1;
+
+    if (slidePart) {
+        currentSlideIndex = Math.max(0, Math.min(parseInt(slidePart[1]) - 1, slides.length - 1));
+        if (stepPart) {
+            initialStepIndex = parseInt(stepPart[1]) - 1;
+        }
+    }
+
+    renderSlide();
+
+    // Apply initial step if present
+    if (initialStepIndex > -1) {
+        applySteps(initialStepIndex);
+    }
+
+    setupEventListeners();
+    setupBroadcastListener();
 }
 
 async function loadSlides(files) {
@@ -98,7 +160,7 @@ function renderSlide() {
         const stepValues = new Set(steps.map(el => parseInt(el.dataset.step)));
         currentSlideStepValues = Array.from(stepValues).sort((a, b) => a - b);
         currentStepIndex = -1;
-        
+
         // Ensure all steps are hidden initially
         steps.forEach(el => el.classList.remove('step-visible'));
     } else {
@@ -108,7 +170,7 @@ function renderSlide() {
 
     // Update controls
     slideNumber.textContent = `${currentSlideIndex + 1} / ${slides.length}`;
-    
+
     // Show filename
     if (slideFiles[currentSlideIndex]) {
         const filename = slideFiles[currentSlideIndex].split('/').pop();
@@ -125,14 +187,8 @@ function renderSlide() {
     if (currentStepIndex > -1) {
         newHash += `-step-${currentStepIndex + 1}`;
     }
-    
+
     if (window.location.hash !== newHash) {
-        // use replaceState to avoid history spam? Or pushState?
-        // If we want back button to work for steps, use pushState or just assignment.
-        // But user might not want 100 history entries. 
-        // Presentation usually doesn't rely on back button.
-        // Let's use replaceState for steps, maybe?
-        // existing code used replaceState.
         history.replaceState(null, null, newHash);
     }
 
@@ -155,7 +211,7 @@ function nextSlide() {
         const activeSlide = slides[currentSlideIndex];
         const elementsToReveal = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
         elementsToReveal.forEach(el => el.classList.add('step-visible'));
-        
+
         // Update hash/broadcast
         const newHash = `#slide-${currentSlideIndex + 1}-step-${currentStepIndex + 1}`;
         history.replaceState(null, null, newHash);
@@ -184,7 +240,7 @@ function prevSlide() {
         const elementsToHide = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
         elementsToHide.forEach(el => el.classList.remove('step-visible'));
         currentStepIndex--;
-        
+
         // Update hash/broadcast
         let newHash = `#slide-${currentSlideIndex + 1}`;
         if (currentStepIndex > -1) newHash += `-step-${currentStepIndex + 1}`;
@@ -213,11 +269,11 @@ function setupEventListeners() {
         const hashStr = window.location.hash;
         const slidePart = hashStr.match(/slide-(\d+)/);
         const stepPart = hashStr.match(/step-(\d+)/);
-        
+
         if (slidePart) {
             const newSlideIndex = Math.max(0, Math.min(parseInt(slidePart[1]) - 1, slides.length - 1));
             const newStepIndex = stepPart ? parseInt(stepPart[1]) - 1 : -1;
-            
+
             if (newSlideIndex !== currentSlideIndex) {
                 currentSlideIndex = newSlideIndex;
                 renderSlide(); // This resets steps
@@ -244,6 +300,7 @@ function setupEventListeners() {
     prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
     presenterBtn.addEventListener('click', (e) => { e.stopPropagation(); openPresenterMode(); });
     fullscreenBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
+    exitBtn.addEventListener('click', (e) => { e.stopPropagation(); exitPresentation(); });
 
     // Keyboard events
     document.addEventListener('keydown', (e) => {
@@ -292,15 +349,28 @@ function setupBroadcastListener() {
     };
 }
 
+function exitPresentation() {
+    if (!confirm('Exit this presentation?')) return;
+    sessionStorage.removeItem('quickpoint_slides');
+    slides = [];
+    slideFiles = [];
+    currentSlideIndex = 0;
+    currentStepIndex = -1;
+    currentSlideStepValues = [];
+    slideContainer.innerHTML = '';
+    history.replaceState(null, null, window.location.pathname + window.location.search);
+    showLanding();
+}
+
 function openPresenterMode() {
     const width = 800;
     const height = 600;
     const left = (screen.width - width) / 2;
     const top = (screen.height - height) / 2;
-    
+
     window.open(
-        'presenter.html', 
-        'Presenter View', 
+        'presenter.html',
+        'Presenter View',
         `width=${width},height=${height},top=${top},left=${left}`
     );
 }
@@ -319,12 +389,12 @@ function toggleFullscreen() {
 
 function applySteps(targetStepIndex) {
     currentStepIndex = targetStepIndex;
-    
+
     // Iterate through all possible step values for this slide
     currentSlideStepValues.forEach((stepValue, index) => {
         const activeSlide = slides[currentSlideIndex];
         const elements = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
-        
+
         if (index <= targetStepIndex) {
             elements.forEach(el => el.classList.add('step-visible'));
         } else {
@@ -334,30 +404,29 @@ function applySteps(targetStepIndex) {
 }
 
 function resizeApp() {
-    const app = document.getElementById('app');
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    
+
     // Base resolution (16:9)
     const baseWidth = 1280;
     const baseHeight = 720;
-    
+
     const scaleX = windowWidth / baseWidth;
     const scaleY = windowHeight / baseHeight;
     const scale = Math.min(scaleX, scaleY);
-    
+
     app.style.width = `${baseWidth}px`;
     app.style.height = `${baseHeight}px`;
     app.style.transform = `scale(${scale})`;
     app.style.transformOrigin = 'center center';
-    
+
     // Center it
     app.style.position = 'absolute';
     app.style.top = '50%';
     app.style.left = '50%';
     app.style.marginTop = `-${baseHeight/2}px`;
     app.style.marginLeft = `-${baseWidth/2}px`;
-    
+
     // Ensure overflow hidden on body to avoid scrollbars
     document.body.style.overflow = 'hidden';
 }
