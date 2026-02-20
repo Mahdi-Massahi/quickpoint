@@ -1,7 +1,7 @@
 {
     "slides": [
-        "../examples/slides/01-intro.html",
-        "../examples/slides/02-code.html",
-        "../examples/slides/03-end.html"
+        "01-intro.html",
+        "02-code.html",
+        "03-end.html"
     ]
 }

@@ -1,0 +1,27 @@
+{
+    "slides": [
+        "slides/00-cover.html",
+        "slides/00-intro.html",
+        "slides/00-roadmap.html",
+        "slides/01-intelligence.html",
+        "slides/02-problem.html",
+        "slides/03-issue-vs-problem.html",
+        "slides/04-problem-types.html",
+        "slides/05-reduction.html",
+        "slides/06-algorithms.html",
+        "slides/07-complexity-orders.html",
+        "slides/08-problem-classification.html",
+        "slides/10-discovering-algorithms.html",
+        "slides/11-discovery-of-llms.html",
+        "slides/12-choosing-algorithms.html",
+        "slides/13-broken-hammer.html",
+        "slides/14-llm-translator.html",
+        "slides/15-hybrid-intelligence.html",
+        "slides/16-example-dutch.html",
+        "slides/17-system-prompt.html",
+        "slides/18-diagnose-response.html",
+        "slides/19-hammer-attempt.html",
+        "slides/20-hybrid-solution.html",
+        "slides/21-summary.html"
+    ]
+}

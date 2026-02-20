@@ -24,28 +24,20 @@ async function init() {
         resizeApp();
         window.addEventListener('resize', resizeApp);
 
-        // 1. Check ?config= query param
         const urlParams = new URLSearchParams(window.location.search);
         const configParam = urlParams.get('config');
 
         if (configParam) {
-            const response = await fetch(configParam);
-            if (!response.ok) throw new Error('Failed to load config: ' + configParam);
-            const config = await response.json();
-            sessionStorage.setItem('quickpoint_slides', JSON.stringify(config.slides));
-            slideFiles = config.slides;
-        }
-        // 2. Check sessionStorage
-        else if (sessionStorage.getItem('quickpoint_slides')) {
-            slideFiles = JSON.parse(sessionStorage.getItem('quickpoint_slides'));
-        }
-        // 3. Show landing screen and wait for file input
-        else {
+            await loadFromURL(configParam);
+            startPresentation();
+        } else if (urlParams.get('receiver') === 'false' && sessionStorage.getItem('quickpoint_contents')) {
+            loadFromSession();
+            startPresentation();
+        } else if (await tryRestoreFromHandle()) {
+            startPresentation();
+        } else {
             showLanding();
-            return;
         }
-
-        startPresentation();
     } catch (error) {
         console.error('Initialization error:', error);
         if (slideContainer) {
@@ -54,47 +46,275 @@ async function init() {
     }
 }
 
+// --- IndexedDB helpers for persisting directory handle ---
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('quickpoint', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('handles');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function storeDirectoryHandle(handle) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(handle, 'presentationDir');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getStoredDirectoryHandle() {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readonly');
+            const request = tx.objectStore('handles').get('presentationDir');
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = () => reject(request.error);
+        });
+    } catch {
+        return null;
+    }
+}
+
+async function clearStoredDirectoryHandle() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').delete('presentationDir');
+    } catch { /* ignore */ }
+}
+
+async function readDirectoryRecursively(dirHandle, basePath = '') {
+    const fileMap = new Map();
+    for await (const [name, entry] of dirHandle) {
+        const path = basePath ? `${basePath}/${name}` : name;
+        if (entry.kind === 'file') {
+            fileMap.set(path, await entry.getFile());
+        } else if (entry.kind === 'directory') {
+            const subMap = await readDirectoryRecursively(entry, path);
+            for (const [p, f] of subMap) fileMap.set(p, f);
+        }
+    }
+    return fileMap;
+}
+
+// --- Config loading strategies ---
+
+async function loadFromURL(configURL) {
+    const response = await fetch(configURL);
+    if (!response.ok) throw new Error('Failed to load: ' + configURL);
+    const config = await response.json();
+
+    // Derive base directory from config URL
+    const baseDir = configURL.substring(0, configURL.lastIndexOf('/') + 1);
+
+    const contents = [];
+    const filenames = [];
+    for (const slidePath of config.slides) {
+        const fullPath = baseDir + slidePath;
+        const res = await fetch(fullPath);
+        if (!res.ok) throw new Error('Failed to load slide: ' + fullPath);
+        let html = await res.text();
+
+        // Resolve relative asset paths to absolute URLs based on the slide's location
+        const slideBaseURL = fullPath.substring(0, fullPath.lastIndexOf('/') + 1);
+        html = html.replace(/(src|poster)="([^"]+)"/g, (match, attr, refPath) => {
+            if (/^(data:|https?:|blob:)/.test(refPath)) return match;
+            const absoluteURL = new URL(refPath, slideBaseURL).href;
+            return `${attr}="${absoluteURL}"`;
+        });
+
+        contents.push(html);
+        filenames.push(slidePath.split('/').pop());
+    }
+
+    slideFiles = filenames;
+    sessionStorage.setItem('quickpoint_contents', JSON.stringify(contents));
+    sessionStorage.setItem('quickpoint_filenames', JSON.stringify(filenames));
+}
+
+function loadFromSession() {
+    slideFiles = JSON.parse(sessionStorage.getItem('quickpoint_filenames') || '[]');
+}
+
+async function tryRestoreFromHandle() {
+    try {
+        const handle = await getStoredDirectoryHandle();
+        if (!handle) return false;
+
+        const permission = await handle.requestPermission({ mode: 'read' });
+        if (permission !== 'granted') return false;
+
+        const fileMap = await readDirectoryRecursively(handle);
+        await loadFromFileMap(fileMap);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function showLanding() {
     if (landing) landing.style.display = 'flex';
     if (app) app.style.display = 'none';
 
-    const fileInput = document.getElementById('config-file-input');
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileInput);
+    if ('showDirectoryPicker' in window) {
+        const openBtn = document.getElementById('open-btn');
+        if (openBtn) {
+            openBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleDirectoryPick();
+            });
+        }
+    } else {
+        const folderInput = document.getElementById('config-folder-input');
+        if (folderInput) {
+            folderInput.addEventListener('change', handleDirectoryInput);
+        }
     }
 }
 
-function handleFileInput(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+async function loadFromFileMap(fileMap) {
+    const configFile = fileMap.get('config.json');
+    if (!configFile) {
+        throw new Error('No config.json found in the selected folder');
+    }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-        try {
-            const config = JSON.parse(event.target.result);
-            if (!config.slides || !Array.isArray(config.slides)) {
-                throw new Error('Invalid config: missing "slides" array');
-            }
-            sessionStorage.setItem('quickpoint_slides', JSON.stringify(config.slides));
-            slideFiles = config.slides;
+    const configText = await readFileAsText(configFile);
+    const config = JSON.parse(configText);
 
-            if (landing) landing.style.display = 'none';
-            if (app) app.style.display = '';
+    if (!config.slides || !Array.isArray(config.slides)) {
+        throw new Error('Invalid config: missing "slides" array');
+    }
 
-            startPresentation();
-        } catch (err) {
-            console.error('Error reading config file:', err);
-            alert('Invalid config file: ' + err.message);
+    // Create blob URLs for all non-text assets (images, etc.)
+    const assetBlobURLs = new Map();
+    for (const [relPath, file] of fileMap) {
+        if (/\.(png|jpe?g|gif|svg|webp|ico|bmp|mp4|webm|mp3|ogg|wav|pdf)$/i.test(relPath)) {
+            const blobURL = URL.createObjectURL(file);
+            assetBlobURLs.set(relPath, blobURL);
         }
-    };
-    reader.readAsText(file);
+    }
+
+    const contents = [];
+    const filenames = [];
+
+    for (const slidePath of config.slides) {
+        const slideFile = fileMap.get(slidePath);
+        if (!slideFile) {
+            throw new Error('Slide not found in folder: ' + slidePath);
+        }
+
+        let html = await readFileAsText(slideFile);
+        const slideDir = slidePath.includes('/') ? slidePath.substring(0, slidePath.lastIndexOf('/') + 1) : '';
+        html = resolveAssetPaths(html, slideDir, assetBlobURLs);
+
+        contents.push(html);
+        filenames.push(slidePath.split('/').pop());
+    }
+
+    slideFiles = filenames;
+    sessionStorage.setItem('quickpoint_contents', JSON.stringify(contents));
+    sessionStorage.setItem('quickpoint_filenames', JSON.stringify(filenames));
 }
 
-async function startPresentation() {
+async function handleDirectoryInput(e) {
+    const fileList = Array.from(e.target.files);
+    if (fileList.length === 0) return;
+
+    try {
+        const fileMap = new Map();
+        const topDir = fileList[0].webkitRelativePath.split('/')[0];
+        for (const file of fileList) {
+            const relPath = file.webkitRelativePath.substring(topDir.length + 1);
+            fileMap.set(relPath, file);
+        }
+
+        await loadFromFileMap(fileMap);
+
+        if (landing) landing.style.display = 'none';
+        if (app) app.style.display = '';
+        startPresentation();
+    } catch (err) {
+        console.error('Error reading presentation folder:', err);
+        alert('Error: ' + err.message);
+    }
+}
+
+async function handleDirectoryPick() {
+    try {
+        const handle = await window.showDirectoryPicker();
+        await storeDirectoryHandle(handle);
+
+        const fileMap = await readDirectoryRecursively(handle);
+        await loadFromFileMap(fileMap);
+
+        if (landing) landing.style.display = 'none';
+        if (app) app.style.display = '';
+        startPresentation();
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.error('Error reading presentation folder:', err);
+        alert('Error: ' + err.message);
+    }
+}
+
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+function resolveAssetPaths(html, slideDir, assetBlobURLs) {
+    // Replace src="..." and poster="..." with blob URLs where matched
+    return html.replace(/(src|poster)="([^"]+)"/g, (match, attr, refPath) => {
+        // Skip data: URLs, http(s): URLs, and blob: URLs
+        if (/^(data:|https?:|blob:)/.test(refPath)) return match;
+
+        // Decode URI-encoded path for matching
+        const decodedRef = decodeURIComponent(refPath);
+
+        // Resolve the reference relative to the slide's directory
+        const resolved = resolvePath(slideDir, decodedRef);
+
+        if (assetBlobURLs.has(resolved)) {
+            return `${attr}="${assetBlobURLs.get(resolved)}"`;
+        }
+        return match;
+    });
+}
+
+function resolvePath(base, relative) {
+    // Combine a base directory (e.g., "slides/") with a relative path (e.g., "../assets/img.png")
+    const parts = base ? base.replace(/\/$/, '').split('/') : [];
+    const relParts = relative.split('/');
+
+    for (const part of relParts) {
+        if (part === '..') {
+            parts.pop();
+        } else if (part !== '.' && part !== '') {
+            parts.push(part);
+        }
+    }
+    return parts.join('/');
+}
+
+// --- Presentation lifecycle ---
+
+function startPresentation() {
     if (landing) landing.style.display = 'none';
     if (app) app.style.display = '';
 
-    await loadSlides(slideFiles);
+    const contents = JSON.parse(sessionStorage.getItem('quickpoint_contents') || '[]');
+    slideFiles = JSON.parse(sessionStorage.getItem('quickpoint_filenames') || '[]');
+    loadSlidesFromContent(contents);
 
     // Check URL hash for initial slide
     const hashStr = window.location.hash;
@@ -111,7 +331,6 @@ async function startPresentation() {
 
     renderSlide();
 
-    // Apply initial step if present
     if (initialStepIndex > -1) {
         applySteps(initialStepIndex);
     }
@@ -120,14 +339,11 @@ async function startPresentation() {
     setupBroadcastListener();
 }
 
-async function loadSlides(files) {
-    slideContainer.innerHTML = ''; // Clear container
-    slides = []; // Reset slides array
+function loadSlidesFromContent(contents) {
+    slideContainer.innerHTML = '';
+    slides = [];
 
-    const fetchPromises = files.map(file => fetch(file).then(res => res.text()));
-    const slidesContent = await Promise.all(fetchPromises);
-
-    slidesContent.forEach((content, index) => {
+    contents.forEach((content, index) => {
         const slideDiv = document.createElement('div');
         slideDiv.classList.add('slide');
         slideDiv.id = `slide-${index + 1}`;
@@ -137,8 +353,9 @@ async function loadSlides(files) {
     });
 }
 
+// --- Slide rendering & navigation ---
+
 function renderSlide() {
-    // Update classes
     slides.forEach((slide, index) => {
         if (index === currentSlideIndex) {
             slide.classList.add('active');
@@ -160,8 +377,6 @@ function renderSlide() {
         const stepValues = new Set(steps.map(el => parseInt(el.dataset.step)));
         currentSlideStepValues = Array.from(stepValues).sort((a, b) => a - b);
         currentStepIndex = -1;
-
-        // Ensure all steps are hidden initially
         steps.forEach(el => el.classList.remove('step-visible'));
     } else {
         currentSlideStepValues = [];
@@ -171,10 +386,8 @@ function renderSlide() {
     // Update controls
     slideNumber.textContent = `${currentSlideIndex + 1} / ${slides.length}`;
 
-    // Show filename
     if (slideFiles[currentSlideIndex]) {
-        const filename = slideFiles[currentSlideIndex].split('/').pop();
-        slideFilename.textContent = `(${filename})`;
+        slideFilename.textContent = `(${slideFiles[currentSlideIndex]})`;
     } else {
         slideFilename.textContent = '';
     }
@@ -182,7 +395,7 @@ function renderSlide() {
     prevBtn.disabled = currentSlideIndex === 0;
     nextBtn.disabled = currentSlideIndex === slides.length - 1;
 
-    // Update URL hash without scrolling (include step if > -1)
+    // Update URL hash
     let newHash = `#slide-${currentSlideIndex + 1}`;
     if (currentStepIndex > -1) {
         newHash += `-step-${currentStepIndex + 1}`;
@@ -204,15 +417,12 @@ function renderSlide() {
 }
 
 function nextSlide() {
-    // Check for steps
     if (currentSlideStepValues.length > 0 && currentStepIndex < currentSlideStepValues.length - 1) {
         currentStepIndex++;
         const stepValue = currentSlideStepValues[currentStepIndex];
         const activeSlide = slides[currentSlideIndex];
-        const elementsToReveal = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
-        elementsToReveal.forEach(el => el.classList.add('step-visible'));
+        activeSlide.querySelectorAll(`[data-step="${stepValue}"]`).forEach(el => el.classList.add('step-visible'));
 
-        // Update hash/broadcast
         const newHash = `#slide-${currentSlideIndex + 1}-step-${currentStepIndex + 1}`;
         history.replaceState(null, null, newHash);
         const urlParams = new URLSearchParams(window.location.search);
@@ -233,15 +443,12 @@ function nextSlide() {
 }
 
 function prevSlide() {
-    // Check for visible steps to hide
     if (currentSlideStepValues.length > 0 && currentStepIndex >= 0) {
         const stepValue = currentSlideStepValues[currentStepIndex];
         const activeSlide = slides[currentSlideIndex];
-        const elementsToHide = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
-        elementsToHide.forEach(el => el.classList.remove('step-visible'));
+        activeSlide.querySelectorAll(`[data-step="${stepValue}"]`).forEach(el => el.classList.remove('step-visible'));
         currentStepIndex--;
 
-        // Update hash/broadcast
         let newHash = `#slide-${currentSlideIndex + 1}`;
         if (currentStepIndex > -1) newHash += `-step-${currentStepIndex + 1}`;
         history.replaceState(null, null, newHash);
@@ -262,10 +469,10 @@ function prevSlide() {
     }
 }
 
+// --- Event listeners ---
+
 function setupEventListeners() {
-    // Hash change event
     window.addEventListener('hashchange', () => {
-        // Parse Hash: #slide-N-step-K
         const hashStr = window.location.hash;
         const slidePart = hashStr.match(/slide-(\d+)/);
         const stepPart = hashStr.match(/step-(\d+)/);
@@ -276,22 +483,15 @@ function setupEventListeners() {
 
             if (newSlideIndex !== currentSlideIndex) {
                 currentSlideIndex = newSlideIndex;
-                renderSlide(); // This resets steps
-                // Apply steps if needed
-                if (newStepIndex > -1) {
-                    applySteps(newStepIndex);
-                }
+                renderSlide();
+                if (newStepIndex > -1) applySteps(newStepIndex);
             } else if (newStepIndex !== currentStepIndex) {
-                // Same slide, different step
                 applySteps(newStepIndex);
             }
         }
     });
 
-    // Click events
-    // Click anywhere on slide to advance (unless strictly clicking controls)
     slideContainer.addEventListener('click', (e) => {
-        // Prevent if clicking on links or interactive elements
         if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
         nextSlide();
     });
@@ -302,7 +502,6 @@ function setupEventListeners() {
     fullscreenBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
     exitBtn.addEventListener('click', (e) => { e.stopPropagation(); exitPresentation(); });
 
-    // Keyboard events
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
             nextSlide();
@@ -313,7 +512,6 @@ function setupEventListeners() {
         }
     });
 
-    // Touch events for basic swipe
     let touchStartX = 0;
     document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
     document.addEventListener('touchend', e => {
@@ -324,11 +522,8 @@ function setupEventListeners() {
 }
 
 function setupBroadcastListener() {
-    // Check if we should ignore broadcasts (e.g. for preview windows)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('receiver') === 'false') {
-        return;
-    }
+    if (urlParams.get('receiver') === 'false') return;
 
     broadcastChannel.onmessage = (event) => {
         if (event.data.type === 'SLIDE_CHANGED') {
@@ -349,9 +544,13 @@ function setupBroadcastListener() {
     };
 }
 
+// --- Actions ---
+
 function exitPresentation() {
     if (!confirm('Exit this presentation?')) return;
-    sessionStorage.removeItem('quickpoint_slides');
+    sessionStorage.removeItem('quickpoint_contents');
+    sessionStorage.removeItem('quickpoint_filenames');
+    clearStoredDirectoryHandle();
     slides = [];
     slideFiles = [];
     currentSlideIndex = 0;
@@ -381,20 +580,15 @@ function toggleFullscreen() {
             console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
         });
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
     }
 }
 
 function applySteps(targetStepIndex) {
     currentStepIndex = targetStepIndex;
-
-    // Iterate through all possible step values for this slide
     currentSlideStepValues.forEach((stepValue, index) => {
         const activeSlide = slides[currentSlideIndex];
         const elements = activeSlide.querySelectorAll(`[data-step="${stepValue}"]`);
-
         if (index <= targetStepIndex) {
             elements.forEach(el => el.classList.add('step-visible'));
         } else {
@@ -407,7 +601,6 @@ function resizeApp() {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
-    // Base resolution (16:9)
     const baseWidth = 1280;
     const baseHeight = 720;
 
@@ -420,14 +613,12 @@ function resizeApp() {
     app.style.transform = `scale(${scale})`;
     app.style.transformOrigin = 'center center';
 
-    // Center it
     app.style.position = 'absolute';
     app.style.top = '50%';
     app.style.left = '50%';
     app.style.marginTop = `-${baseHeight/2}px`;
     app.style.marginLeft = `-${baseWidth/2}px`;
 
-    // Ensure overflow hidden on body to avoid scrollbars
     document.body.style.overflow = 'hidden';
 }
 
