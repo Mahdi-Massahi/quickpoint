@@ -33,8 +33,6 @@ async function init() {
         } else if (urlParams.get('receiver') === 'false' && sessionStorage.getItem('quickpoint_contents')) {
             loadFromSession();
             startPresentation();
-        } else if (await tryRestoreFromHandle()) {
-            startPresentation();
         } else {
             showLanding();
         }
@@ -44,63 +42,6 @@ async function init() {
             slideContainer.innerHTML = `<div class="slide active"><h1>Error</h1><p>${error.message}</p></div>`;
         }
     }
-}
-
-// --- IndexedDB helpers for persisting directory handle ---
-
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('quickpoint', 1);
-        request.onupgradeneeded = () => request.result.createObjectStore('handles');
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function storeDirectoryHandle(handle) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction('handles', 'readwrite');
-        tx.objectStore('handles').put(handle, 'presentationDir');
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
-    });
-}
-
-async function getStoredDirectoryHandle() {
-    try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction('handles', 'readonly');
-            const request = tx.objectStore('handles').get('presentationDir');
-            request.onsuccess = () => resolve(request.result || null);
-            request.onerror = () => reject(request.error);
-        });
-    } catch {
-        return null;
-    }
-}
-
-async function clearStoredDirectoryHandle() {
-    try {
-        const db = await openDB();
-        const tx = db.transaction('handles', 'readwrite');
-        tx.objectStore('handles').delete('presentationDir');
-    } catch { /* ignore */ }
-}
-
-async function readDirectoryRecursively(dirHandle, basePath = '') {
-    const fileMap = new Map();
-    for await (const [name, entry] of dirHandle) {
-        const path = basePath ? `${basePath}/${name}` : name;
-        if (entry.kind === 'file') {
-            fileMap.set(path, await entry.getFile());
-        } else if (entry.kind === 'directory') {
-            const subMap = await readDirectoryRecursively(entry, path);
-            for (const [p, f] of subMap) fileMap.set(p, f);
-        }
-    }
-    return fileMap;
 }
 
 // --- Config loading strategies ---
@@ -122,7 +63,8 @@ async function loadFromURL(configURL) {
         let html = await res.text();
 
         // Resolve relative asset paths to absolute URLs based on the slide's location
-        const slideBaseURL = fullPath.substring(0, fullPath.lastIndexOf('/') + 1);
+        const slideAbsoluteURL = new URL(fullPath, window.location.href).href;
+        const slideBaseURL = slideAbsoluteURL.substring(0, slideAbsoluteURL.lastIndexOf('/') + 1);
         html = html.replace(/(src|poster)="([^"]+)"/g, (match, attr, refPath) => {
             if (/^(data:|https?:|blob:)/.test(refPath)) return match;
             const absoluteURL = new URL(refPath, slideBaseURL).href;
@@ -142,84 +84,14 @@ function loadFromSession() {
     slideFiles = JSON.parse(sessionStorage.getItem('quickpoint_filenames') || '[]');
 }
 
-async function tryRestoreFromHandle() {
-    try {
-        const handle = await getStoredDirectoryHandle();
-        if (!handle) return false;
-
-        const permission = await handle.requestPermission({ mode: 'read' });
-        if (permission !== 'granted') return false;
-
-        const fileMap = await readDirectoryRecursively(handle);
-        await loadFromFileMap(fileMap);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
 function showLanding() {
     if (landing) landing.style.display = 'flex';
     if (app) app.style.display = 'none';
 
-    if ('showDirectoryPicker' in window) {
-        const openBtn = document.getElementById('open-btn');
-        if (openBtn) {
-            openBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                handleDirectoryPick();
-            });
-        }
-    } else {
-        const folderInput = document.getElementById('config-folder-input');
-        if (folderInput) {
-            folderInput.addEventListener('change', handleDirectoryInput);
-        }
+    const folderInput = document.getElementById('config-folder-input');
+    if (folderInput) {
+        folderInput.addEventListener('change', handleDirectoryInput);
     }
-}
-
-async function loadFromFileMap(fileMap) {
-    const configFile = fileMap.get('config.json');
-    if (!configFile) {
-        throw new Error('No config.json found in the selected folder');
-    }
-
-    const configText = await readFileAsText(configFile);
-    const config = JSON.parse(configText);
-
-    if (!config.slides || !Array.isArray(config.slides)) {
-        throw new Error('Invalid config: missing "slides" array');
-    }
-
-    // Create blob URLs for all non-text assets (images, etc.)
-    const assetBlobURLs = new Map();
-    for (const [relPath, file] of fileMap) {
-        if (/\.(png|jpe?g|gif|svg|webp|ico|bmp|mp4|webm|mp3|ogg|wav|pdf)$/i.test(relPath)) {
-            const blobURL = URL.createObjectURL(file);
-            assetBlobURLs.set(relPath, blobURL);
-        }
-    }
-
-    const contents = [];
-    const filenames = [];
-
-    for (const slidePath of config.slides) {
-        const slideFile = fileMap.get(slidePath);
-        if (!slideFile) {
-            throw new Error('Slide not found in folder: ' + slidePath);
-        }
-
-        let html = await readFileAsText(slideFile);
-        const slideDir = slidePath.includes('/') ? slidePath.substring(0, slidePath.lastIndexOf('/') + 1) : '';
-        html = resolveAssetPaths(html, slideDir, assetBlobURLs);
-
-        contents.push(html);
-        filenames.push(slidePath.split('/').pop());
-    }
-
-    slideFiles = filenames;
-    sessionStorage.setItem('quickpoint_contents', JSON.stringify(contents));
-    sessionStorage.setItem('quickpoint_filenames', JSON.stringify(filenames));
 }
 
 async function handleDirectoryInput(e) {
@@ -227,37 +99,64 @@ async function handleDirectoryInput(e) {
     if (fileList.length === 0) return;
 
     try {
+        // Build a map of relativePath -> File
         const fileMap = new Map();
         const topDir = fileList[0].webkitRelativePath.split('/')[0];
+
         for (const file of fileList) {
             const relPath = file.webkitRelativePath.substring(topDir.length + 1);
             fileMap.set(relPath, file);
         }
 
-        await loadFromFileMap(fileMap);
+        // Find config.json
+        let configFile = fileMap.get('config.json');
+        if (!configFile) {
+            throw new Error('No config.json found in the selected folder');
+        }
+
+        const configText = await readFileAsText(configFile);
+        const config = JSON.parse(configText);
+
+        if (!config.slides || !Array.isArray(config.slides)) {
+            throw new Error('Invalid config: missing "slides" array');
+        }
+
+        // Create blob URLs for all non-text assets (images, etc.)
+        const assetBlobURLs = new Map();
+        for (const [relPath, file] of fileMap) {
+            if (/\.(png|jpe?g|gif|svg|webp|ico|bmp|mp4|webm|mp3|ogg|wav|pdf)$/i.test(relPath)) {
+                const blobURL = URL.createObjectURL(file);
+                assetBlobURLs.set(relPath, blobURL);
+            }
+        }
+
+        // Read each slide and resolve asset references
+        const contents = [];
+        const filenames = [];
+
+        for (const slidePath of config.slides) {
+            const slideFile = fileMap.get(slidePath);
+            if (!slideFile) {
+                throw new Error('Slide not found in folder: ' + slidePath);
+            }
+
+            let html = await readFileAsText(slideFile);
+            const slideDir = slidePath.includes('/') ? slidePath.substring(0, slidePath.lastIndexOf('/') + 1) : '';
+            html = resolveAssetPaths(html, slideDir, assetBlobURLs);
+
+            contents.push(html);
+            filenames.push(slidePath.split('/').pop());
+        }
+
+        slideFiles = filenames;
+        sessionStorage.setItem('quickpoint_contents', JSON.stringify(contents));
+        sessionStorage.setItem('quickpoint_filenames', JSON.stringify(filenames));
 
         if (landing) landing.style.display = 'none';
         if (app) app.style.display = '';
+
         startPresentation();
     } catch (err) {
-        console.error('Error reading presentation folder:', err);
-        alert('Error: ' + err.message);
-    }
-}
-
-async function handleDirectoryPick() {
-    try {
-        const handle = await window.showDirectoryPicker();
-        await storeDirectoryHandle(handle);
-
-        const fileMap = await readDirectoryRecursively(handle);
-        await loadFromFileMap(fileMap);
-
-        if (landing) landing.style.display = 'none';
-        if (app) app.style.display = '';
-        startPresentation();
-    } catch (err) {
-        if (err.name === 'AbortError') return;
         console.error('Error reading presentation folder:', err);
         alert('Error: ' + err.message);
     }
@@ -550,7 +449,6 @@ function exitPresentation() {
     if (!confirm('Exit this presentation?')) return;
     sessionStorage.removeItem('quickpoint_contents');
     sessionStorage.removeItem('quickpoint_filenames');
-    clearStoredDirectoryHandle();
     slides = [];
     slideFiles = [];
     currentSlideIndex = 0;
