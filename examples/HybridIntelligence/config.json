@@ -1,4 +1,10 @@
 {
+    "template": "xebia",
+    "meta": {
+        "date": "20/02/2026",
+        "speaker": "Mahdi Massahi",
+        "title": "Hybrid Intelligence"
+    },
     "slides": [
         "slides/00-cover.html",
         "slides/00-intro.html",
@@ -22,6 +28,7 @@
         "slides/18-diagnose-response.html",
         "slides/19-hammer-attempt.html",
         "slides/20-hybrid-solution.html",
-        "slides/21-summary.html"
+        "slides/21-summary.html",
+        "slides/22-closure.html"
     ]
 }
