@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xebia Template Preview</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .slide {
+            position: relative;
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+            margin-bottom: 2rem;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+            /* Force slide dimensions for preview */
+            min-height: 600px;
+            width: 100%;
+            background-color: var(--bg-color);
+        }
+        body {
+            overflow: auto;
+            background: #f0f0f0;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Slide -->
+    <div class="slide title-slide">
+        <h1>Xebia Presentation</h1>
+        <h2>Template Reference</h2>
+        <p>February 2026</p>
+    </div>
+
+    <!-- Content Slide -->
+    <div class="slide">
+        <h1>Main Topic Title</h1>
+        <h2>Subheading or context</h2>
+        <ul>
+            <li>Key point one</li>
+            <li>Key point two with more detail</li>
+            <li>Another interesting insight</li>
+        </ul>
+        <p>Additional paragraph text to show spacing and typography.</p>
+    </div>
+
+    <!-- Section Header -->
+    <div class="slide section-header">
+        <h1>Section Breakdown</h1>
+    </div>
+
+    <!-- Code Example -->
+    <div class="slide">
+        <h1>Technical Slide</h1>
+        <p>Using code blocks for technical content:</p>
+        <pre>
+function helloXebia() {
+    console.log("Welcome to the new template!");
+}
+        </pre>
+    </div>
+</body>
+</html>

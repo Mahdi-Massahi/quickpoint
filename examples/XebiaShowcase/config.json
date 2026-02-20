@@ -1,0 +1,17 @@
+{
+    "template": "xebia",
+    "meta": {
+        "date": "20/02/2026",
+        "speaker": "Mahdi Massahi",
+        "title": "Xebia Data"
+    },
+    "slides": [
+        "slides/00-cover.html",
+        "slides/01-introduction.html",
+        "slides/05-sparkle.html",
+        "slides/02-tech-stack.html",
+        "slides/06-roadmap.html",
+        "slides/04-half-image.html",
+        "slides/03-conclusion.html"
+    ]
+}

@@ -1,0 +1,448 @@
+/*
+ * Xebia Template
+ * Based on Xebia corporate PPTX template (2025/2026)
+ */
+
+:root {
+    /* Brand */
+    --xebia-dark: #130025;
+    --xebia-purple: #611562;
+    --xebia-purple-light: #7B1B7B;
+    --xebia-purple-mid: #933793;
+    --xebia-purple-soft: #B75EB7;
+    --xebia-pink: #E330D0;
+    --xebia-white: #FFFFFF;
+    --xebia-black: #000000;
+    --xebia-gray: #6D6D6D;
+    --xebia-gray-light: #E3E3E7;
+    --xebia-gray-muted: #B9B2BE;
+
+    /* Map to global variables */
+    --bg-color: var(--xebia-white);
+    --text-color: var(--xebia-black);
+    --accent-color: var(--xebia-purple);
+    --font-family: 'Arial', sans-serif;
+}
+
+/* ============================================================
+   BASE SLIDE STYLES
+   ============================================================ */
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 3rem 3.5rem;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out;
+    background-color: var(--xebia-white);
+    color: var(--xebia-black);
+    font-family: var(--font-family);
+}
+
+.slide.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+
+.slide h1 {
+    font-size: 3rem;
+    color: var(--xebia-black);
+    margin: 0 0 0.5rem 0;
+    font-weight: bold;
+    line-height: 1.15;
+}
+
+.slide h2 {
+    font-size: 1.6rem;
+    color: var(--xebia-gray);
+    margin: 0 0 1.5rem 0;
+    font-weight: normal;
+}
+
+.slide p, .slide li {
+    font-size: 1.4rem;
+    line-height: 1.5;
+    margin-bottom: 0.6rem;
+}
+
+.slide ul {
+    margin-left: 2rem;
+    margin-top: 0.5rem;
+}
+
+.slide a {
+    color: var(--xebia-pink);
+    text-decoration: none;
+}
+
+.slide a:hover { text-decoration: underline; }
+
+/* Code blocks */
+.slide pre {
+    background: #f8f8f8;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 5px solid var(--xebia-purple);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.1rem;
+    overflow-x: auto;
+    margin-top: 1rem;
+}
+
+/* ============================================================
+   CHROME: HEADER BAR (injected by app.js on content slides)
+   ============================================================ */
+
+.slide-chrome-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-bottom: 0.6rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--xebia-gray);
+    flex-shrink: 0;
+}
+
+.slide-chrome-header .chrome-meta {
+    display: flex;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--xebia-gray);
+}
+
+.slide-chrome-header .chrome-meta span:not(:last-child)::after {
+    content: ' \00B7';
+    margin-left: 0.4rem;
+}
+
+.slide-chrome-header .chrome-logo {
+    height: 1.2rem;
+    width: auto;
+    color: var(--xebia-black);
+}
+
+/* ============================================================
+   CHROME: FOOTER (injected by app.js)
+   ============================================================ */
+
+.slide-chrome-footer {
+    position: absolute;
+    bottom: 1.2rem;
+    left: 3.5rem;
+    right: 3.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--xebia-gray);
+    z-index: 4;
+}
+
+.slide-chrome-footer .chrome-slide-num {
+    font-weight: bold;
+}
+
+/* ============================================================
+   TITLE SLIDE
+   ============================================================ */
+
+.slide.title-slide {
+    justify-content: center;
+    background-color: var(--xebia-dark);
+    /* Remove background image from main container to use pseudo-element */
+    background-image: none; 
+    color: var(--xebia-white);
+    padding: 3.5rem 4rem;
+    padding-right: 45%; /* Ensure text doesn't hit the image */
+    text-align: left;
+    align-items: flex-start;
+}
+
+/* Image on the right using ::after pseudo-element */
+.slide.title-slide::after {
+    content: '';
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    bottom: 2rem;
+    width: 40%;
+    background-image: url('assets/image553.jpeg');
+    background-size: cover;
+    background-position: center;
+    border-radius: 15px; /* Rounded corners */
+    z-index: 1;
+}
+
+.slide.title-slide h1 {
+    color: var(--xebia-white);
+    font-size: 3.8rem;
+    margin-bottom: 0.8rem;
+    position: relative;
+    z-index: 2;
+}
+
+.slide.title-slide h2 {
+    color: var(--xebia-gray-muted);
+    font-size: 1.8rem;
+    position: relative;
+    z-index: 2;
+}
+
+.slide.title-slide p {
+    color: var(--xebia-gray-muted);
+    font-size: 1.2rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* Title slide header chrome */
+.slide-chrome-title-header {
+    position: absolute;
+    top: 1.5rem;
+    left: 4rem;
+    right: 45%; /* Align with text area */
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.8rem;
+    z-index: 4;
+    border-bottom: 1px solid var(--xebia-gray);
+}
+
+.slide-chrome-title-header .chrome-date {
+    font-size: 1.2rem;
+    color: var(--xebia-gray-muted);
+}
+
+/* Title slide footer chrome */
+.slide-chrome-title-footer {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 4rem;
+    right: 45%; /* Align with text area */
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.8rem;
+    z-index: 4;
+    border-top: 1px solid var(--xebia-gray);
+}
+
+.slide-chrome-title-footer .chrome-logo-large {
+    height: 1.6rem;
+    width: auto;
+    color: var(--xebia-white);
+    filter: brightness(0) invert(1);
+}
+
+.slide-chrome-title-footer .chrome-tagline {
+    font-size: 0.85rem;
+    color: var(--xebia-gray-muted);
+    border-left: 1px solid var(--xebia-gray-muted);
+    padding-left: 1rem;
+}
+
+/* ============================================================
+   SECTION HEADER SLIDE
+   ============================================================ */
+
+.slide.section-header {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: var(--xebia-purple-light);
+    color: var(--xebia-white);
+}
+
+.slide.section-header h1 {
+    color: var(--xebia-white);
+    font-size: 3.5rem;
+}
+
+.slide.section-header h2 {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.slide.section-header.dark-bg {
+    background-color: var(--xebia-dark);
+}
+
+/* Section header footer adapts colors */
+.slide.section-header .slide-chrome-footer {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================
+   HALF IMAGE SLIDE (Light top, Image bottom)
+   ============================================================ */
+
+.slide.half-image-slide {
+    background-color: var(--xebia-white);
+    color: var(--xebia-black);
+    justify-content: flex-start;
+    padding-bottom: 50%; /* Make room for image at bottom */
+}
+
+.slide.half-image-slide::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40%;
+    background-image: url('assets/image538.jpeg');
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+}
+
+.slide.half-image-slide h1 {
+    color: var(--xebia-black);
+    margin-top: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.slide.half-image-slide h2 {
+    color: var(--xebia-gray);
+    position: relative;
+    z-index: 2;
+}
+
+/* ============================================================
+   SPARKLE SLIDE (Black background with purple sparkles)
+   ============================================================ */
+
+.slide.sparkle-slide {
+    background-color: var(--xebia-black);
+    background-image: url('assets/image539.png');
+    background-size: cover;
+    background-position: center;
+    color: var(--xebia-white);
+    justify-content: flex-start;
+    align-items: flex-end;
+    padding-top: 3rem; /* Matches base .slide padding-top */
+    padding-right: 3.5rem; /* Matches base .slide padding-right */
+    text-align: right;
+}
+
+.slide.sparkle-slide h1 {
+    color: var(--xebia-white);
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--xebia-gray); /* Match line from other slides */
+    padding-bottom: 0.6rem; /* Match header bar padding */
+}
+
+.slide.sparkle-slide h2 {
+    color: var(--xebia-white);
+    font-size: 2rem;
+    opacity: 0.9;
+}
+
+.slide.sparkle-slide .slide-chrome-footer {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================================
+   NOTES (hidden)
+   ============================================================ */
+
+.notes { display: none; }
+
+/* ============================================================
+   STEP ANIMATIONS
+   ============================================================ */
+
+[data-step] {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+[data-step].step-visible {
+    opacity: 1;
+}
+
+/* ============================================================
+   CONTROLS OVERLAY
+   ============================================================ */
+
+#controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#controls:hover { opacity: 1; }
+
+#controls button {
+    background: transparent;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+#controls button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+#slide-number {
+    font-size: 1rem;
+    margin: 0 10px;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+
+.slide table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 1.2rem;
+}
+
+.slide th {
+    background-color: var(--xebia-purple-light);
+    color: var(--xebia-white);
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 2px solid var(--xebia-purple);
+}
+
+.slide td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--xebia-gray-light);
+}
+
+.slide tr:nth-child(even) {
+    background-color: rgba(227, 227, 231, 0.3); /* xebia-gray-light with opacity */
+}

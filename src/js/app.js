@@ -4,6 +4,7 @@ let slides = [];
 let slideFiles = [];
 let currentStepIndex = -1;
 let currentSlideStepValues = [];
+let presentationConfig = {};
 const broadcastChannel = new BroadcastChannel('quickpoint_channel');
 
 // DOM Elements
@@ -30,7 +31,7 @@ async function init() {
             await loadFromURL(configParam);
             startPresentation();
         } else if (urlParams.get('receiver') === 'false' && sessionStorage.getItem('quickpoint_contents')) {
-            loadFromSession();
+            await loadFromSession();
             startPresentation();
         }
     } catch (error) {
@@ -41,15 +42,59 @@ async function init() {
     }
 }
 
+// --- CSS loading ---
+
+function loadCSS(href, id) {
+    return new Promise((resolve) => {
+        const existing = document.getElementById(id);
+        if (existing) existing.remove();
+
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.id = id;
+        link.onload = resolve;
+        link.onerror = () => {
+            console.warn(`Optional CSS not found: ${href}`);
+            resolve();
+        };
+        document.head.appendChild(link);
+    });
+}
+
+async function loadTemplateCSS(templateName) {
+    const templateBase = new URL(`src/templates/${templateName}`, window.location.origin).href;
+    await loadCSS(`${templateBase}/style.css`, 'qp-template');
+}
+
 // --- Config loading strategies ---
 
 async function loadFromURL(configURL) {
     const response = await fetch(configURL);
     if (!response.ok) throw new Error('Failed to load: ' + configURL);
     const config = await response.json();
+    presentationConfig = config;
 
     // Derive base directory from config URL
     const baseDir = configURL.substring(0, configURL.lastIndexOf('/') + 1);
+
+    // Load template CSS
+    if (config.template) {
+        await loadTemplateCSS(config.template);
+        sessionStorage.setItem('quickpoint_template', config.template);
+    }
+
+    // Load custom theme CSS (relative to config.json location)
+    if (config.theme) {
+        const themeURL = new URL(config.theme, new URL(configURL, window.location.href)).href;
+        await loadCSS(themeURL, 'qp-custom-theme');
+        sessionStorage.setItem('quickpoint_theme', themeURL);
+    }
+
+    // Store metadata
+    if (config.meta) {
+        sessionStorage.setItem('quickpoint_meta', JSON.stringify(config.meta));
+    }
 
     const contents = [];
     const filenames = [];
@@ -77,8 +122,20 @@ async function loadFromURL(configURL) {
     sessionStorage.setItem('quickpoint_filenames', JSON.stringify(filenames));
 }
 
-function loadFromSession() {
+async function loadFromSession() {
     slideFiles = JSON.parse(sessionStorage.getItem('quickpoint_filenames') || '[]');
+
+    const template = sessionStorage.getItem('quickpoint_template');
+    if (template) {
+        await loadTemplateCSS(template);
+        presentationConfig.template = template;
+    }
+
+    const themeURL = sessionStorage.getItem('quickpoint_theme');
+    if (themeURL) await loadCSS(themeURL, 'qp-custom-theme');
+
+    const metaStr = sessionStorage.getItem('quickpoint_meta');
+    if (metaStr) presentationConfig.meta = JSON.parse(metaStr);
 }
 
 // --- Presentation lifecycle ---
@@ -116,11 +173,83 @@ function loadSlidesFromContent(contents) {
     slideContainer.innerHTML = '';
     slides = [];
 
+    const meta = presentationConfig.meta || {};
+    const hasTemplate = !!presentationConfig.template;
+    const templateBase = hasTemplate
+        ? new URL(`src/templates/${presentationConfig.template}`, window.location.origin).href
+        : '';
+
     contents.forEach((content, index) => {
         const slideDiv = document.createElement('div');
         slideDiv.classList.add('slide');
         slideDiv.id = `slide-${index + 1}`;
-        slideDiv.innerHTML = content;
+
+        // Parse content to detect slide type classes on root element
+        const temp = document.createElement('div');
+        temp.innerHTML = content.trim();
+        const firstChild = temp.firstElementChild;
+
+        // If root element has class="slide ...", merge classes into wrapper and unwrap
+        if (firstChild && firstChild.classList.contains('slide')) {
+            firstChild.classList.forEach(cls => {
+                if (cls !== 'slide') slideDiv.classList.add(cls);
+            });
+            slideDiv.innerHTML = firstChild.innerHTML;
+        } else {
+            slideDiv.innerHTML = content;
+        }
+
+        // Inject template chrome if a template is loaded
+        if (hasTemplate) {
+            const isTitleSlide = slideDiv.classList.contains('title-slide');
+            const isSectionHeader = slideDiv.classList.contains('section-header');
+
+            if (!isTitleSlide && !isSectionHeader) {
+                // Content slides: inject header bar + footer
+                const header = document.createElement('div');
+                header.className = 'slide-chrome-header';
+                header.innerHTML = `
+                    <span class="chrome-meta">
+                        ${meta.date ? `<span>${meta.date}</span>` : ''}
+                        ${meta.speaker ? `<span>${meta.speaker}</span>` : ''}
+                        ${meta.title ? `<span>${meta.title}</span>` : ''}
+                    </span>
+                    <img class="chrome-logo" src="${templateBase}/assets/xebia-logo.svg" alt="Xebia">
+                `;
+                slideDiv.insertBefore(header, slideDiv.firstChild);
+            }
+
+            if (isTitleSlide) {
+                // Title slides: inject header logo bar
+                const header = document.createElement('div');
+                header.className = 'slide-chrome-title-header';
+                header.innerHTML = `
+                    <span class="chrome-date">${meta.date || ''}</span>
+                `;
+                slideDiv.insertBefore(header, slideDiv.firstChild);
+
+                // Title slides: inject bottom logo bar
+                const footer = document.createElement('div');
+                footer.className = 'slide-chrome-title-footer';
+                footer.innerHTML = `
+                    <img class="chrome-logo-large" src="${templateBase}/assets/xebia-logo.svg" alt="Xebia">
+                    <span class="chrome-tagline">${meta.speaker || ''} ${meta.title ? '&middot; ' + meta.title : ''}</span>
+                `;
+                slideDiv.appendChild(footer);
+            }
+
+            // Footer with slide number for all non-title slides
+            if (!isTitleSlide) {
+                const footer = document.createElement('div');
+                footer.className = 'slide-chrome-footer';
+                footer.innerHTML = `
+                    <span>&copy; ${new Date().getFullYear()} Xebia. All rights reserved</span>
+                    <span class="chrome-slide-num">${index + 1}</span>
+                `;
+                slideDiv.appendChild(footer);
+            }
+        }
+
         slideContainer.appendChild(slideDiv);
         slides.push(slideDiv);
     });
@@ -134,12 +263,10 @@ function renderSlide() {
             slide.classList.add('active');
             slide.style.opacity = '1';
             slide.style.pointerEvents = 'auto';
-            slide.style.transform = 'scale(1)';
         } else {
             slide.classList.remove('active');
             slide.style.opacity = '0';
             slide.style.pointerEvents = 'none';
-            slide.style.transform = 'scale(0.95)';
         }
     });
 

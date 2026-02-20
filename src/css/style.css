@@ -45,8 +45,7 @@ body, html {
     align-items: flex-start;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-    transform: scale(0.95);
+    transition: opacity 0.5s ease-in-out;
     padding: 4rem;
     box-sizing: border-box;
     text-align: left;
@@ -55,7 +54,6 @@ body, html {
 .slide.active {
     opacity: 1;
     pointer-events: auto;
-    transform: scale(1);
     z-index: 10;
 }
 
